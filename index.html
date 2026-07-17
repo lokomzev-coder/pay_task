@@ -56,6 +56,7 @@
       width: 100%;
       margin: 0 auto;
       padding: 20px;
+      padding-bottom: 80px;
     }
 
     .glass-card {
@@ -72,7 +73,12 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 20px;
+      padding: 20px 0;
+    }
+
+    header h1 {
+      font-size: 24px;
+      font-weight: 700;
     }
 
     .nav-mobile {
@@ -97,6 +103,7 @@
       cursor: pointer;
       padding: 8px 16px;
       border-radius: 8px;
+      font-weight: 600;
     }
 
     .nav-btn.active {
@@ -133,12 +140,20 @@
       background: var(--bg-secondary);
       color: var(--text-primary);
       margin: 4px 0;
+      font-size: 16px;
     }
 
     button {
       background: var(--accent);
       color: white;
       cursor: pointer;
+      border: none;
+      font-weight: 600;
+      padding: 12px 24px;
+    }
+
+    button:hover {
+      opacity: 0.9;
     }
 
     .modal {
@@ -161,10 +176,22 @@
       border-radius: var(--border-radius);
       background: var(--bg-secondary);
       box-shadow: var(--glass-shadow);
+      backdrop-filter: blur(10px);
     }
 
     .hidden {
       display: none;
+    }
+
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .flex-between input {
+      flex: 1;
     }
 
     @media (min-width: 768px) {
@@ -178,11 +205,26 @@
         padding: 20px;
         position: fixed;
         height: 100%;
+        top: 0;
+        left: 0;
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border-right: 1px solid var(--glass-border);
       }
       main {
         margin-left: 220px;
         padding-top: 20px;
       }
+      .container {
+        padding-bottom: 20px;
+      }
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      font-size: 18px;
+      opacity: 0.7;
     }
   </style>
 </head>
@@ -201,7 +243,7 @@
   </div>
 
   <main id="content">
-    <!-- Сюда будут подгружаться задачи или платежи -->
+    <div class="loading">Загрузка...</div>
   </main>
 </div>
 
@@ -244,70 +286,47 @@
   </div>
 </div>
 
-<script type="module">
-  // --- ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ ---
-  const SUPABASE_URL = 'https://lzwbdobhodwdmjzcmdjs.supabase.co'; // Замените на ваш URL
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw'; 
-  // --- ЛОКАЛЬНОЕ ТЕСТИРОВАНИЕ: Укажите ваш Telegram ID как BigInt ---
-  const TEST_TELEGRAM_ID = BigInt("809839462"); // ЗАМЕНИТЕ НА СВОЙ РЕАЛЬНЫЙ ID
-  // -----------------------------
+<script>
+  // --- КОНФИГУРАЦИЯ ---
+  const SUPABASE_URL = 'https://lzwbdobhodwdmjzcmdjs.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw';
+  
+  // ТЕСТОВЫЙ TELEGRAM ID - замените на свой!
+  const TEST_TELEGRAM_ID = "809839462";
+  // ----------------------
 
-  if (!SUPABASE_URL || !SUPABASE_KEY || SUPABASE_URL.includes('your-project')) {
-      console.error("❌ Пожалуйста, укажите действительные SUPABASE_URL и SUPABASE_KEY.");
-      alert("Конфигурация Supabase не установлена. Проверьте консоль.");
-  }
+  // Создаем клиент Supabase
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let telegramId = null;
   let currentSection = 'tasks';
   let currentLang = 'ru';
 
-  // --- Инициализация Telegram SDK ---
-  try {
-      // Проверяем, определён ли Telegram
-      if (typeof Telegram === 'undefined') {
-          console.error("❌ Telegram SDK не загружен или не определён.");
-          // --- ЛОКАЛЬНОЕ ТЕСТИРОВАНИЕ ---
-          console.warn("⚠️ Работаем в режиме локального тестирования.");
-          if (TEST_TELEGRAM_ID) {
-              telegramId = TEST_TELEGRAM_ID;
-              console.log(`🔧 Используем тестовый Telegram ID: ${telegramId}`);
-          } else {
-              console.error("❌ Не указан TEST_TELEGRAM_ID для локального тестирования.");
-              alert("Не указан Telegram ID для тестирования.");
-          }
-      } else {
-          Telegram.WebApp.ready(); // Сообщаем Telegram, что приложение готово
-          const initData = Telegram.WebApp.initDataUnsafe;
-          if (initData && initData.user) {
-              telegramId = BigInt(initData.user.id); // Получаем Telegram ID
-              console.log("✅ Telegram ID получен:", telegramId.toString());
-          } else {
-              console.warn("⚠️ Telegram ID не получен из initData. Работаем в режиме локального тестирования.");
-              // --- ЛОКАЛЬНОЕ ТЕСТИРОВАНИЕ ---
-              if (TEST_TELEGRAM_ID) {
-                  telegramId = TEST_TELEGRAM_ID;
-                  console.log(`🔧 Используем тестовый Telegram ID: ${telegramId}`);
-              } else {
-                  console.error("❌ Не указан TEST_TELEGRAM_ID для локального тестирования.");
-                  alert("Не указан Telegram ID для тестирования.");
-              }
-          }
+  // --- ИНИЦИАЛИЗАЦИЯ TELEGRAM ---
+  function initTelegram() {
+    try {
+      // Проверяем, запущено ли в Telegram
+      if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.ready();
+        const user = window.Telegram.WebApp.initDataUnsafe?.user;
+        if (user) {
+          telegramId = String(user.id);
+          console.log('✅ Telegram ID получен:', telegramId);
+          return;
+        }
       }
-  } catch (e) {
-      console.error("❌ Ошибка инициализации Telegram SDK или получения ID:", e);
-      // Если всё сломалось, можно попробовать тестовый ID, если он определён
-      if (TEST_TELEGRAM_ID) {
-          telegramId = TEST_TELEGRAM_ID;
-          console.log(`🔧 Используем тестовый Telegram ID после ошибки: ${telegramId}`);
-      }
+      
+      // Если не в Telegram или нет пользователя - используем тестовый ID
+      console.warn('⚠️ Используем тестовый Telegram ID:', TEST_TELEGRAM_ID);
+      telegramId = TEST_TELEGRAM_ID;
+      
+    } catch (e) {
+      console.error('❌ Ошибка инициализации Telegram:', e);
+      telegramId = TEST_TELEGRAM_ID;
+    }
   }
 
-  if (!telegramId) {
-      console.error("❌ FATAL: Telegram ID не установлен. Приложение не может работать.");
-      alert("Telegram ID не установлен. Приложение не может работать.");
-  }
-
+  // --- ПЕРЕВОДЫ ---
   const translations = {
     ru: {
       tasks: 'ЗАДАЧИ',
@@ -358,239 +377,284 @@
   };
 
   function t(key) {
-    return translations[currentLang][key] || key;
+    return translations[currentLang]?.[key] || key;
   }
 
+  // --- ЗАГРУЗКА ПРОФИЛЯ ---
   async function loadProfile() {
     try {
-      const { data, error } = await supabase.from('profiles').select('*').eq('telegram_id', telegramId).single();
-      if (error) {
-        if (error.code === '42P01') {
-            console.error("❌ Таблица 'profiles' не найдена. Проверьте, что SQL-скрипт выполнен в Supabase.");
-            alert("Ошибка базы данных: таблица profiles отсутствует.");
-            return; // Важно: выходим, если профиль не создан
-        } else if (error.code === 'PGRST301') {
-            console.error("❌ RLS политика не позволяет выполнить запрос. Проверьте настройки Supabase.");
-            alert("Ошибка доступа к данным (RLS).");
-            return;
-        } else {
-            console.error("❌ Ошибка при загрузке профиля:", error.message || error);
-        }
-        // Создаём профиль, если его нет
-        const { error: insertError } = await supabase.from('profiles').insert([{ telegram_id: telegramId }]);
-        if (insertError) {
-            console.error("❌ Ошибка при создании профиля:", insertError.message || insertError);
-            alert("Не удалось создать профиль. Проверьте консоль.");
-            return;
-        } else {
-            console.log("🆕 Профиль создан для ID:", telegramId.toString());
-            currentLang = 'ru';
-            document.body.classList.remove('dark');
-        }
-      } else {
-        currentLang = data.language;
-        document.body.classList.toggle('dark', data.theme === 'dark');
-        console.log("👤 Профиль загружен. Язык:", currentLang, "Тема:", data.theme);
+      if (!telegramId) {
+        console.error('❌ Нет Telegram ID');
+        return;
       }
-      updateUI(); // Обновляем интерфейс после загрузки языка
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('telegram_id', telegramId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          // Профиль не найден - создаем
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert([{ telegram_id: telegramId }]);
+          
+          if (insertError) {
+            console.error('❌ Ошибка создания профиля:', insertError);
+          } else {
+            console.log('✅ Профиль создан');
+            currentLang = 'ru';
+          }
+        } else {
+          console.error('❌ Ошибка загрузки профиля:', error);
+        }
+        return;
+      }
+
+      if (data) {
+        currentLang = data.language || 'ru';
+        if (data.theme === 'dark') {
+          document.body.classList.add('dark');
+        } else {
+          document.body.classList.remove('dark');
+        }
+        console.log('✅ Профиль загружен');
+      }
     } catch (err) {
-      console.error("❌ Необработанная ошибка при загрузке профиля:", err);
-      alert("Произошла ошибка при загрузке профиля.");
+      console.error('❌ Ошибка:', err);
     }
   }
 
-  async function toggleTheme() {
-    const newTheme = document.body.classList.toggle('dark') ? 'dark' : 'light';
-    const { error } = await supabase.from('profiles').update({ theme: newTheme }).eq('telegram_id', telegramId);
-    if (error) {
-        console.error("❌ Ошибка при обновлении темы:", error.message || error);
-        alert("Не удалось обновить тему. Проверьте консоль.");
-    } else {
-        console.log("🎨 Тема обновлена на:", newTheme);
-    }
-  }
-
-  async function changeLanguage(lang) {
-    currentLang = lang;
-    const { error } = await supabase.from('profiles').update({ language: lang }).eq('telegram_id', telegramId);
-    if (error) {
-        console.error("❌ Ошибка при обновлении языка:", error.message || error);
-        alert("Не удалось обновить язык. Проверьте консоль.");
-    } else {
-        console.log("🌐 Язык обновлён на:", lang);
-        updateUI();
-    }
-  }
-
+  // --- ОБНОВЛЕНИЕ UI ---
   function updateUI() {
-    // Обновляем текст на кнопках навигации
     document.querySelectorAll('.nav-btn').forEach(btn => {
-        const section = btn.dataset.section;
-        if (section === 'tasks') btn.textContent = t('tasks');
-        if (section === 'payments') btn.textContent = t('payments');
-        if (section === 'settings') btn.textContent = t('settings');
+      const section = btn.dataset.section;
+      if (section === 'tasks') btn.textContent = t('tasks');
+      if (section === 'payments') btn.textContent = t('payments');
+      if (section === 'settings') btn.textContent = t('settings');
     });
-    // Обновляем заголовок модального окна, если оно открыто
-    if (currentSection === 'tasks') {
-        document.getElementById('modal-title').textContent = t('new_task');
-    } else if (currentSection === 'payments') {
-        document.getElementById('modal-title').textContent = t('new_payment');
-    }
-    // Обновляем placeholder и label в формах
-    document.getElementById('item-title').placeholder = t('title');
-    document.getElementById('item-folder').previousElementSibling.textContent = t('folder');
-    document.getElementById('item-priority').previousElementSibling.textContent = t('priority');
-    document.getElementById('item-deadline').previousElementSibling.textContent = t('deadline');
-    document.getElementById('item-tags').placeholder = t('tags');
-    document.getElementById('modal-form').lastElementChild.textContent = t('add');
 
-    document.getElementById('payment-title').placeholder = t('title');
-    document.getElementById('payment-due-date').previousElementSibling.textContent = t('due_date');
-    document.getElementById('payment-recurrence').previousElementSibling.textContent = t('recurrence');
-    document.getElementById('modal-form-payment').lastElementChild.textContent = t('add');
+    document.getElementById('modal-title').textContent = 
+      currentSection === 'tasks' ? t('new_task') : t('new_payment');
+    
+    document.getElementById('item-title').placeholder = t('title');
+    document.getElementById('item-tags').placeholder = t('tags');
+    
+    const formBtn = document.querySelector('#modal-form button[type="submit"]');
+    if (formBtn) formBtn.textContent = t('add');
+    
+    const paymentBtn = document.querySelector('#modal-form-payment button[type="submit"]');
+    if (paymentBtn) paymentBtn.textContent = t('add');
   }
 
+  // --- ЗАГРУЗКА ПАПОК ---
   async function loadFolders() {
     try {
-      const { data, error } = await supabase.from('folders').select('id, name').eq('telegram_id', telegramId);
+      const { data, error } = await supabase
+        .from('folders')
+        .select('id, name')
+        .eq('telegram_id', telegramId);
+
       if (error) throw error;
-      const folderSelect = document.getElementById('item-folder');
-      folderSelect.innerHTML = `<option value="">${t('folder')}</option>`;
-      data.forEach(folder => {
-        const option = document.createElement('option');
-        option.value = folder.id;
-        option.textContent = folder.name;
-        folderSelect.appendChild(option);
-      });
+
+      const select = document.getElementById('item-folder');
+      select.innerHTML = `<option value="">${t('folder')}</option>`;
+      
+      if (data) {
+        data.forEach(folder => {
+          const option = document.createElement('option');
+          option.value = folder.id;
+          option.textContent = folder.name;
+          select.appendChild(option);
+        });
+      }
     } catch (err) {
-      console.error("❌ Ошибка при загрузке папок:", err.message || err);
-      alert("Ошибка при загрузке папок. Проверьте консоль.");
+      console.error('❌ Ошибка загрузки папок:', err);
     }
   }
 
+  // --- ОТОБРАЖЕНИЕ ЗАДАЧ ---
   async function renderTasks() {
+    const content = document.getElementById('content');
+    content.innerHTML = '<div class="loading">Загрузка задач...</div>';
+
     try {
-      const { data: tasks, error } = await supabase.from('tasks').select('*').eq('telegram_id', telegramId);
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('telegram_id', telegramId);
+
       if (error) throw error;
 
-      const content = document.getElementById('content');
-      content.innerHTML = ''; // Очищаем содержимое перед рендером
+      content.innerHTML = '';
 
-      // Создаём карточку с поиском и кнопкой добавления
+      // Карточка с поиском и кнопкой добавления
       const headerCard = document.createElement('div');
       headerCard.className = 'glass-card';
       headerCard.innerHTML = `
-        <input type="text" id="search-tasks" placeholder="${t('search')}" />
-        <button id="add-task-btn-main">${t('add')}</button>
+        <div class="flex-between">
+          <input type="text" id="search-tasks" placeholder="${t('search')}" />
+          <button id="add-task-btn-main">${t('add')}</button>
+        </div>
       `;
       content.appendChild(headerCard);
 
-      // Добавляем обработчик для новой кнопки "Добавить задачу"
-      document.getElementById('add-task-btn-main').onclick = () => openForm('tasks');
+      // Обработчик кнопки "Добавить"
+      document.getElementById('add-task-btn-main').addEventListener('click', function(e) {
+        e.stopPropagation();
+        openForm('tasks');
+      });
 
-      // Добавляем обработчик для поиска
+      // Поиск
       const searchInput = document.getElementById('search-tasks');
-      searchInput.oninput = () => {
-        const filter = searchInput.value.toLowerCase();
-        document.querySelectorAll('.task-item').forEach(el => {
-          el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          const filter = this.value.toLowerCase();
+          document.querySelectorAll('.task-item').forEach(el => {
+            el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
+          });
         });
-      };
+      }
 
-      // Рендерим задачи
-      tasks.forEach(task => {
-        const dueDate = task.deadline ? new Date(task.deadline) : null;
-        let statusClass = 'green'; // По умолчанию зелёный, если дедлайна нет
-        if (dueDate) {
-          const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
-          if (diff < 1) statusClass = 'red';
-          else if (diff < 3) statusClass = 'yellow';
-        }
-        const taskDiv = document.createElement('div');
-        taskDiv.className = 'task-item glass-card';
-        taskDiv.innerHTML = `
-          <span>${task.title}</span>
-          <div>
-            <span class="deadline-indicator ${statusClass}"></span>
-            <button onclick="window.shareItem('task', '${task.id}')">${t('share')}</button>
-          </div>
-        `;
-        content.appendChild(taskDiv);
-      });
+      // Список задач
+      if (data && data.length > 0) {
+        data.forEach(task => {
+          const dueDate = task.deadline ? new Date(task.deadline) : null;
+          let statusClass = 'green';
+          if (dueDate) {
+            const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
+            if (diff < 1) statusClass = 'red';
+            else if (diff < 3) statusClass = 'yellow';
+          }
+
+          const div = document.createElement('div');
+          div.className = 'task-item glass-card';
+          div.innerHTML = `
+            <span>${task.title}</span>
+            <div>
+              <span class="deadline-indicator ${statusClass}"></span>
+              <button class="share-btn" data-type="task" data-id="${task.id}">${t('share')}</button>
+            </div>
+          `;
+          content.appendChild(div);
+
+          // Обработчик для кнопки "Поделиться"
+          const shareBtn = div.querySelector('.share-btn');
+          if (shareBtn) {
+            shareBtn.addEventListener('click', function() {
+              shareItem(this.dataset.type, this.dataset.id);
+            });
+          }
+        });
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'glass-card';
+        empty.textContent = 'Нет задач';
+        content.appendChild(empty);
+      }
+
     } catch (err) {
-      console.error("❌ Ошибка при загрузке задач:", err.message || err);
-      alert("Ошибка при загрузке задач. Проверьте консоль.");
+      console.error('❌ Ошибка загрузки задач:', err);
+      content.innerHTML = `<div class="glass-card">Ошибка загрузки задач</div>`;
     }
   }
 
+  // --- ОТОБРАЖЕНИЕ ПЛАТЕЖЕЙ ---
   async function renderPayments() {
+    const content = document.getElementById('content');
+    content.innerHTML = '<div class="loading">Загрузка платежей...</div>';
+
     try {
-      const { data: payments, error } = await supabase.from('payments').select('*').eq('telegram_id', telegramId);
+      const { data, error } = await supabase
+        .from('payments')
+        .select('*')
+        .eq('telegram_id', telegramId);
+
       if (error) throw error;
 
-      const content = document.getElementById('content');
-      content.innerHTML = ''; // Очищаем содержимое перед рендером
+      content.innerHTML = '';
 
-      // Создаём карточку с поиском и кнопкой добавления
       const headerCard = document.createElement('div');
       headerCard.className = 'glass-card';
       headerCard.innerHTML = `
-        <input type="text" id="search-payments" placeholder="${t('search')}" />
-        <button id="add-payment-btn-main">${t('add')}</button>
+        <div class="flex-between">
+          <input type="text" id="search-payments" placeholder="${t('search')}" />
+          <button id="add-payment-btn-main">${t('add')}</button>
+        </div>
       `;
       content.appendChild(headerCard);
 
-      // Добавляем обработчик для новой кнопки "Добавить платёж"
-      document.getElementById('add-payment-btn-main').onclick = () => openForm('payments');
-
-      // Добавляем обработчик для поиска
-      const searchInput = document.getElementById('search-payments');
-      searchInput.oninput = () => {
-        const filter = searchInput.value.toLowerCase();
-        document.querySelectorAll('.payment-item').forEach(el => {
-          el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
-        });
-      };
-
-      // Рендерим платежи
-      payments.forEach(payment => {
-        const dueDate = payment.due_date ? new Date(payment.due_date) : null;
-        let statusClass = 'green'; // По умолчанию зелёный, если даты нет
-        if (dueDate) {
-          const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
-          if (diff < 2) statusClass = 'red';
-          else if (diff < 7) statusClass = 'yellow';
-        }
-        const paymentDiv = document.createElement('div');
-        paymentDiv.className = 'payment-item glass-card';
-        paymentDiv.innerHTML = `
-          <span>${payment.title}</span>
-          <div>
-            <span class="deadline-indicator ${statusClass}"></span>
-            <button onclick="window.shareItem('payment', '${payment.id}')">${t('share')}</button>
-          </div>
-        `;
-        content.appendChild(paymentDiv);
+      document.getElementById('add-payment-btn-main').addEventListener('click', function(e) {
+        e.stopPropagation();
+        openForm('payments');
       });
+
+      const searchInput = document.getElementById('search-payments');
+      if (searchInput) {
+        searchInput.addEventListener('input', function() {
+          const filter = this.value.toLowerCase();
+          document.querySelectorAll('.payment-item').forEach(el => {
+            el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
+          });
+        });
+      }
+
+      if (data && data.length > 0) {
+        data.forEach(payment => {
+          const dueDate = payment.due_date ? new Date(payment.due_date) : null;
+          let statusClass = 'green';
+          if (dueDate) {
+            const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
+            if (diff < 2) statusClass = 'red';
+            else if (diff < 7) statusClass = 'yellow';
+          }
+
+          const div = document.createElement('div');
+          div.className = 'payment-item glass-card';
+          div.innerHTML = `
+            <span>${payment.title}</span>
+            <div>
+              <span class="deadline-indicator ${statusClass}"></span>
+              <button class="share-btn" data-type="payment" data-id="${payment.id}">${t('share')}</button>
+            </div>
+          `;
+          content.appendChild(div);
+
+          const shareBtn = div.querySelector('.share-btn');
+          if (shareBtn) {
+            shareBtn.addEventListener('click', function() {
+              shareItem(this.dataset.type, this.dataset.id);
+            });
+          }
+        });
+      } else {
+        const empty = document.createElement('div');
+        empty.className = 'glass-card';
+        empty.textContent = 'Нет платежей';
+        content.appendChild(empty);
+      }
+
     } catch (err) {
-      console.error("❌ Ошибка при загрузке платежей:", err.message || err);
-      alert("Ошибка при загрузке платежей. Проверьте консоль.");
+      console.error('❌ Ошибка загрузки платежей:', err);
+      content.innerHTML = `<div class="glass-card">Ошибка загрузки платежей</div>`;
     }
   }
 
+  // --- ПОДЕЛИТЬСЯ ---
   async function shareItem(type, id) {
     try {
-      // В реальной реализации вы бы генерировали уникальную ссылку и записывали её в таблицу shares
-      // Пока просто копируем ссылку на сам сайт
       const link = `${window.location.origin}?shared_resource=${type}&id=${id}`;
       await navigator.clipboard.writeText(link);
-      alert(t('share') + '!'); // Или показать сообщение об успешном копировании
+      alert('Ссылка скопирована!');
     } catch (err) {
-      console.error('❌ Failed to copy share link: ', err);
+      console.error('❌ Ошибка копирования:', err);
       alert('Не удалось скопировать ссылку');
     }
   }
 
+  // --- ЭКСПОРТ ---
   async function exportData() {
     try {
       const [tasksRes, paymentsRes] = await Promise.all([
@@ -598,49 +662,87 @@
         supabase.from('payments').select('*').eq('telegram_id', telegramId)
       ]);
 
-      if (tasksRes.error) throw tasksRes.error;
-      if (paymentsRes.error) throw paymentsRes.error;
-
       const wb = XLSX.utils.book_new();
-      if (tasksRes.data.length > 0) {
-        const wsTasks = XLSX.utils.json_to_sheet(tasksRes.data.map(t => ({...t, telegram_id: undefined}))); // Исключить telegram_id из экспорта
-        XLSX.utils.book_append_sheet(wb, wsTasks, "Tasks");
+      
+      if (tasksRes.data?.length) {
+        const ws = XLSX.utils.json_to_sheet(tasksRes.data);
+        XLSX.utils.book_append_sheet(wb, ws, "Tasks");
       }
-      if (paymentsRes.data.length > 0) {
-        const wsPayments = XLSX.utils.json_to_sheet(paymentsRes.data.map(p => ({...p, telegram_id: undefined}))); // Исключить telegram_id из экспорта
-        XLSX.utils.book_append_sheet(wb, wsPayments, "Payments");
+      if (paymentsRes.data?.length) {
+        const ws = XLSX.utils.json_to_sheet(paymentsRes.data);
+        XLSX.utils.book_append_sheet(wb, ws, "Payments");
       }
 
       XLSX.writeFile(wb, `tracker_data_${Date.now()}.xlsx`);
-      console.log("📥 Данные успешно экспортированы.");
     } catch (err) {
-      console.error("❌ Ошибка при экспорте:", err.message || err);
-      alert("Ошибка при экспорте данных. Проверьте консоль.");
+      console.error('❌ Ошибка экспорта:', err);
+      alert('Ошибка экспорта');
     }
   }
 
   function importData() {
-    alert(t('import') + '. ' + 'Пожалуйста, используйте экспорт.');
+    alert('Импорт: выберите файл Excel');
   }
 
+  // --- НАСТРОЙКИ ---
   function openSettings() {
     const content = document.getElementById('content');
     content.innerHTML = `
       <div class="glass-card">
         <h3>${t('settings')}</h3>
-        <p><label>${t('theme')}:</label> <button onclick="window.toggleTheme()">Toggle</button></p>
+        <p><label>${t('theme')}:</label> 
+          <button id="theme-toggle">Переключить</button>
+        </p>
         <p><label>${t('language')}:</label>
-          <select onchange="window.changeLanguage(this.value)">
-            <option value="ru" ${currentLang === 'ru' ? 'selected' : ''}>RU</option>
-            <option value="en" ${currentLang === 'en' ? 'selected' : ''}>EN</option>
+          <select id="lang-select">
+            <option value="ru" ${currentLang === 'ru' ? 'selected' : ''}>Русский</option>
+            <option value="en" ${currentLang === 'en' ? 'selected' : ''}>English</option>
           </select>
         </p>
-        <p><button onclick="window.exportData()">${t('export')}</button></p>
-        <p><button onclick="window.importData()">${t('import')}</button></p>
+        <p><button id="export-btn">${t('export')}</button></p>
+        <p><button id="import-btn">${t('import')}</button></p>
       </div>
     `;
+
+    document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+    document.getElementById('lang-select').addEventListener('change', function() {
+      changeLanguage(this.value);
+    });
+    document.getElementById('export-btn').addEventListener('click', exportData);
+    document.getElementById('import-btn').addEventListener('click', importData);
   }
 
+  // --- ПЕРЕКЛЮЧЕНИЕ ТЕМЫ ---
+  async function toggleTheme() {
+    const isDark = document.body.classList.toggle('dark');
+    try {
+      await supabase
+        .from('profiles')
+        .update({ theme: isDark ? 'dark' : 'light' })
+        .eq('telegram_id', telegramId);
+    } catch (err) {
+      console.error('Ошибка сохранения темы:', err);
+    }
+  }
+
+  // --- СМЕНА ЯЗЫКА ---
+  async function changeLanguage(lang) {
+    currentLang = lang;
+    try {
+      await supabase
+        .from('profiles')
+        .update({ language: lang })
+        .eq('telegram_id', telegramId);
+    } catch (err) {
+      console.error('Ошибка сохранения языка:', err);
+    }
+    updateUI();
+    if (currentSection === 'tasks') renderTasks();
+    else if (currentSection === 'payments') renderPayments();
+    else if (currentSection === 'settings') openSettings();
+  }
+
+  // --- ОТКРЫТИЕ ФОРМЫ ---
   function openForm(section) {
     currentSection = section;
     document.getElementById('modal-title').textContent = section === 'tasks' ? t('new_task') : t('new_payment');
@@ -650,101 +752,117 @@
     if (section === 'tasks') loadFolders();
   }
 
-  // --- Обработчики навигации ---
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.addEventListener('click', e => {
-      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-      e.target.classList.add('active');
-      currentSection = e.target.dataset.section;
-      console.log("📱 Переключение на секцию:", currentSection);
-      if (currentSection === 'tasks') renderTasks();
-      else if (currentSection === 'payments') renderPayments();
-      else if (currentSection === 'settings') openSettings();
-    });
-  });
-
-  // --- Обработчики модального окна ---
-  document.getElementById('modal').addEventListener('click', e => {
-    if (e.target.id === 'modal') document.getElementById('modal').style.display = 'none';
-  });
-
-  document.getElementById('modal-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const title = document.getElementById('item-title').value;
-    const folder = document.getElementById('item-folder').value;
-    const priority = document.getElementById('item-priority').value;
-    const deadline = document.getElementById('item-deadline').value;
-    const tags = document.getElementById('item-tags').value.split(',').map(tag => tag.trim()).filter(Boolean);
-
-    const { error } = await supabase.from('tasks').insert([{
-      telegram_id: telegramId,
-      title,
-      folder_id: folder || null,
-      priority,
-      tags,
-      deadline: deadline || null
-    }]);
-    if (error) {
-        console.error("❌ Ошибка при создании задачи:", error.message || error);
-        alert("Ошибка при создании задачи. Проверьте консоль.");
-    } else {
-        console.log("✅ Задача создана:", title);
-        renderTasks(); // Перезагружаем задачи
-    }
-    document.getElementById('modal').style.display = 'none';
-    document.getElementById('modal-form').reset();
-  });
-
-  document.getElementById('modal-form-payment').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const title = document.getElementById('payment-title').value;
-    const dueDate = document.getElementById('payment-due-date').value;
-    const recurrence = document.getElementById('payment-recurrence').value;
-
-    const { error } = await supabase.from('payments').insert([{
-      telegram_id: telegramId,
-      title,
-      due_date: dueDate,
-      recurrence
-    }]);
-    if (error) {
-        console.error("❌ Ошибка при создании платежа:", error.message || error);
-        alert("Ошибка при создании платежа. Проверьте консоль.");
-    } else {
-        console.log("✅ Платёж создан:", title);
-        renderPayments(); // Перезагружаем платежи
-    }
-    document.getElementById('modal').style.display = 'none';
-    document.getElementById('modal-form-payment').reset();
-  });
-
-  document.getElementById('settings-btn').addEventListener('click', () => {
+  // --- НАВИГАЦИЯ ---
+  function navigateTo(section) {
+    currentSection = section;
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('.nav-btn[data-section="settings"]').classList.add('active');
-    currentSection = 'settings';
-    console.log("⚙️ Открытие настроек");
-    openSettings();
-  });
+    document.querySelector(`.nav-btn[data-section="${section}"]`)?.classList.add('active');
+    
+    if (section === 'tasks') renderTasks();
+    else if (section === 'payments') renderPayments();
+    else if (section === 'settings') openSettings();
+  }
 
-  // --- Инициализация ---
-  loadProfile().then(() => {
-    console.log("🚀 Инициализация завершена. Загрузка задач...");
-    renderTasks(); // Загрузка задач по умолчанию
-    if (window.innerWidth >= 768) {
-      document.querySelector('.desktop-nav').classList.remove('hidden');
-      document.querySelector('.nav-mobile').classList.add('hidden');
+  // --- ИНИЦИАЛИЗАЦИЯ ---
+  function init() {
+    // 1. Инициализация Telegram
+    initTelegram();
+
+    if (!telegramId) {
+      alert('Не удалось получить Telegram ID');
+      return;
     }
-  }).catch(err => {
-      console.error("❌ Ошибка при инициализации:", err);
-  });
 
-  // --- Глобальные функции для onClick ---
-  window.shareItem = shareItem;
-  window.toggleTheme = toggleTheme;
-  window.changeLanguage = changeLanguage;
-  window.exportData = exportData;
-  window.importData = importData;
+    // 2. Загрузка профиля
+    loadProfile().then(() => {
+      updateUI();
+      
+      // 3. Навигация
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          navigateTo(this.dataset.section);
+        });
+      });
 
+      // 4. Кнопка настроек
+      document.getElementById('settings-btn').addEventListener('click', function() {
+        navigateTo('settings');
+      });
+
+      // 5. Модальное окно - закрытие
+      document.getElementById('modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          this.style.display = 'none';
+        }
+      });
+
+      // 6. Форма задачи
+      document.getElementById('modal-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const title = document.getElementById('item-title').value;
+        const folder = document.getElementById('item-folder').value;
+        const priority = document.getElementById('item-priority').value;
+        const deadline = document.getElementById('item-deadline').value;
+        const tags = document.getElementById('item-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+
+        try {
+          const { error } = await supabase.from('tasks').insert([{
+            telegram_id: telegramId,
+            title,
+            folder_id: folder || null,
+            priority,
+            tags,
+            deadline: deadline || null
+          }]);
+
+          if (error) throw error;
+          
+          document.getElementById('modal').style.display = 'none';
+          this.reset();
+          renderTasks();
+        } catch (err) {
+          console.error('❌ Ошибка создания задачи:', err);
+          alert('Ошибка создания задачи');
+        }
+      });
+
+      // 7. Форма платежа
+      document.getElementById('modal-form-payment').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const title = document.getElementById('payment-title').value;
+        const dueDate = document.getElementById('payment-due-date').value;
+        const recurrence = document.getElementById('payment-recurrence').value;
+
+        try {
+          const { error } = await supabase.from('payments').insert([{
+            telegram_id: telegramId,
+            title,
+            due_date: dueDate,
+            recurrence
+          }]);
+
+          if (error) throw error;
+          
+          document.getElementById('modal').style.display = 'none';
+          this.reset();
+          renderPayments();
+        } catch (err) {
+          console.error('❌ Ошибка создания платежа:', err);
+          alert('Ошибка создания платежа');
+        }
+      });
+
+      // 8. Загрузка задач по умолчанию
+      renderTasks();
+    });
+  }
+
+  // Запуск после загрузки DOM
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 </script>
 </body>
 </html>
