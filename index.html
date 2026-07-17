@@ -6,9 +6,9 @@
   <title>Task & Payment Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   
-  <!-- Сначала загружаем SDK по порядку -->
+  <!-- Загружаем SDK по порядку -->
   <script src="https://unpkg.com/@twa-dev/sdk"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
   
   <style>
@@ -143,6 +143,7 @@
       color: var(--text-primary);
       margin: 4px 0;
       font-size: 16px;
+      width: 100%;
     }
 
     button {
@@ -152,6 +153,7 @@
       border: none;
       font-weight: 600;
       padding: 12px 24px;
+      width: auto;
     }
 
     button:hover {
@@ -179,6 +181,8 @@
       background: var(--bg-secondary);
       box-shadow: var(--glass-shadow);
       backdrop-filter: blur(10px);
+      max-height: 90vh;
+      overflow-y: auto;
     }
 
     .hidden {
@@ -228,31 +232,38 @@
       font-size: 18px;
       opacity: 0.7;
     }
+
+    .empty-state {
+      text-align: center;
+      padding: 30px;
+      color: var(--text-primary);
+      opacity: 0.6;
+    }
   </style>
 </head>
 <body class="light">
 
 <div class="container">
   <header id="app-header">
-    <h1>Tracker</h1>
+    <h1>📋 Tracker</h1>
     <button id="settings-btn">⚙️</button>
   </header>
 
   <div class="desktop-nav hidden">
-    <button class="nav-btn active" data-section="tasks">ЗАДАЧИ</button>
-    <button class="nav-btn" data-section="payments">ПЛАТЕЖИ</button>
-    <button class="nav-btn" data-section="settings">НАСТРОЙКИ</button>
+    <button class="nav-btn active" data-section="tasks">📋 ЗАДАЧИ</button>
+    <button class="nav-btn" data-section="payments">💰 ПЛАТЕЖИ</button>
+    <button class="nav-btn" data-section="settings">⚙️ НАСТРОЙКИ</button>
   </div>
 
   <main id="content">
-    <div class="loading">Загрузка...</div>
+    <div class="loading">⏳ Загрузка...</div>
   </main>
 </div>
 
 <!-- Мобильная навигация -->
 <div class="nav-mobile">
-  <button class="nav-btn active" data-section="tasks">ЗАДАЧИ</button>
-  <button class="nav-btn" data-section="payments">ПЛАТЕЖИ</button>
+  <button class="nav-btn active" data-section="tasks">📋</button>
+  <button class="nav-btn" data-section="payments">💰</button>
 </div>
 
 <!-- Модальное окно -->
@@ -271,7 +282,7 @@
       </select>
       <input type="date" id="item-deadline" />
       <input type="text" id="item-tags" placeholder="Теги (через запятую)" />
-      <button type="submit">Создать</button>
+      <button type="submit">➕ Создать</button>
     </form>
     <form id="modal-form-payment" class="hidden">
       <input type="text" id="payment-title" placeholder="Название" required />
@@ -283,26 +294,26 @@
         <option value="6m">6 месяцев</option>
         <option value="1y">1 год</option>
       </select>
-      <button type="submit">Создать</button>
+      <button type="submit">➕ Создать</button>
     </form>
   </div>
 </div>
 
 <script>
   // --- КОНФИГУРАЦИЯ ---
-  const SUPABASE_URL = 'https://lzwbdobhodwdmjzcmdjs.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw';
+  var SUPABASE_URL = 'https://lzwbdobhodwdmjzcmdjs.supabase.co';
+  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw';
   
   // ТЕСТОВЫЙ TELEGRAM ID - замените на свой!
-  const TEST_TELEGRAM_ID = "809839462";
+  var TEST_TELEGRAM_ID = "809839462";
   // ----------------------
 
   // Создаем клиент Supabase
-  const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
+  var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-  let telegramId = null;
-  let currentSection = 'tasks';
-  let currentLang = 'ru';
+  var telegramId = null;
+  var currentSection = 'tasks';
+  var currentLang = 'ru';
 
   // --- ИНИЦИАЛИЗАЦИЯ TELEGRAM ---
   function initTelegram() {
@@ -310,7 +321,7 @@
       // Проверяем, запущено ли в Telegram
       if (window.Telegram && window.Telegram.WebApp) {
         window.Telegram.WebApp.ready();
-        const user = window.Telegram.WebApp.initDataUnsafe?.user;
+        var user = window.Telegram.WebApp.initDataUnsafe?.user;
         if (user) {
           telegramId = String(user.id);
           console.log('✅ Telegram ID получен:', telegramId);
@@ -329,15 +340,15 @@
   }
 
   // --- ПЕРЕВОДЫ ---
-  const translations = {
+  var translations = {
     ru: {
-      tasks: 'ЗАДАЧИ',
-      payments: 'ПЛАТЕЖИ',
-      settings: 'НАСТРОЙКИ',
+      tasks: '📋 ЗАДАЧИ',
+      payments: '💰 ПЛАТЕЖИ',
+      settings: '⚙️ НАСТРОЙКИ',
       new_task: 'Новая задача',
       new_payment: 'Новый платёж',
-      export: 'Экспорт',
-      import: 'Импорт',
+      export: '📤 Экспорт',
+      import: '📥 Импорт',
       theme: 'Тема',
       language: 'Язык',
       folder: 'Папка',
@@ -346,21 +357,21 @@
       due_date: 'Дата оплаты',
       recurrence: 'Периодичность',
       title: 'Название',
-      add: 'Добавить',
-      search: 'Поиск...',
-      share: 'Поделиться',
+      add: '➕ Добавить',
+      search: '🔍 Поиск...',
+      share: '📤 Поделиться',
       green: 'Зелёный',
       yellow: 'Жёлтый',
       red: 'Красный'
     },
     en: {
-      tasks: 'TASKS',
-      payments: 'PAYMENTS',
-      settings: 'SETTINGS',
+      tasks: '📋 TASKS',
+      payments: '💰 PAYMENTS',
+      settings: '⚙️ SETTINGS',
       new_task: 'New Task',
       new_payment: 'New Payment',
-      export: 'Export',
-      import: 'Import',
+      export: '📤 Export',
+      import: '📥 Import',
       theme: 'Theme',
       language: 'Language',
       folder: 'Folder',
@@ -369,9 +380,9 @@
       due_date: 'Due Date',
       recurrence: 'Recurrence',
       title: 'Title',
-      add: 'Add',
-      search: 'Search...',
-      share: 'Share',
+      add: '➕ Add',
+      search: '🔍 Search...',
+      share: '📤 Share',
       green: 'Green',
       yellow: 'Yellow',
       red: 'Red'
@@ -390,7 +401,7 @@
         return;
       }
 
-      const { data, error } = await supabase
+      var { data, error } = await supabaseClient
         .from('profiles')
         .select('*')
         .eq('telegram_id', telegramId)
@@ -399,7 +410,7 @@
       if (error) {
         if (error.code === 'PGRST116') {
           // Профиль не найден - создаем
-          const { error: insertError } = await supabase
+          var { error: insertError } = await supabaseClient
             .from('profiles')
             .insert([{ telegram_id: telegramId }]);
           
@@ -431,8 +442,8 @@
 
   // --- ОБНОВЛЕНИЕ UI ---
   function updateUI() {
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      const section = btn.dataset.section;
+    document.querySelectorAll('.nav-btn').forEach(function(btn) {
+      var section = btn.dataset.section;
       if (section === 'tasks') btn.textContent = t('tasks');
       if (section === 'payments') btn.textContent = t('payments');
       if (section === 'settings') btn.textContent = t('settings');
@@ -443,30 +454,24 @@
     
     document.getElementById('item-title').placeholder = t('title');
     document.getElementById('item-tags').placeholder = t('tags');
-    
-    const formBtn = document.querySelector('#modal-form button[type="submit"]');
-    if (formBtn) formBtn.textContent = t('add');
-    
-    const paymentBtn = document.querySelector('#modal-form-payment button[type="submit"]');
-    if (paymentBtn) paymentBtn.textContent = t('add');
   }
 
   // --- ЗАГРУЗКА ПАПОК ---
   async function loadFolders() {
     try {
-      const { data, error } = await supabase
+      var { data, error } = await supabaseClient
         .from('folders')
         .select('id, name')
         .eq('telegram_id', telegramId);
 
       if (error) throw error;
 
-      const select = document.getElementById('item-folder');
-      select.innerHTML = `<option value="">${t('folder')}</option>`;
+      var select = document.getElementById('item-folder');
+      select.innerHTML = '<option value="">' + t('folder') + '</option>';
       
       if (data) {
-        data.forEach(folder => {
-          const option = document.createElement('option');
+        data.forEach(function(folder) {
+          var option = document.createElement('option');
           option.value = folder.id;
           option.textContent = folder.name;
           select.appendChild(option);
@@ -479,11 +484,11 @@
 
   // --- ОТОБРАЖЕНИЕ ЗАДАЧ ---
   async function renderTasks() {
-    const content = document.getElementById('content');
-    content.innerHTML = '<div class="loading">Загрузка задач...</div>';
+    var content = document.getElementById('content');
+    content.innerHTML = '<div class="loading">⏳ Загрузка задач...</div>';
 
     try {
-      const { data, error } = await supabase
+      var { data, error } = await supabaseClient
         .from('tasks')
         .select('*')
         .eq('telegram_id', telegramId);
@@ -493,14 +498,13 @@
       content.innerHTML = '';
 
       // Карточка с поиском и кнопкой добавления
-      const headerCard = document.createElement('div');
+      var headerCard = document.createElement('div');
       headerCard.className = 'glass-card';
-      headerCard.innerHTML = `
-        <div class="flex-between">
-          <input type="text" id="search-tasks" placeholder="${t('search')}" />
-          <button id="add-task-btn-main">${t('add')}</button>
-        </div>
-      `;
+      headerCard.innerHTML = 
+        '<div class="flex-between">' +
+          '<input type="text" id="search-tasks" placeholder="' + t('search') + '" />' +
+          '<button id="add-task-btn-main">' + t('add') + '</button>' +
+        '</div>';
       content.appendChild(headerCard);
 
       // Обработчик кнопки "Добавить"
@@ -510,11 +514,11 @@
       });
 
       // Поиск
-      const searchInput = document.getElementById('search-tasks');
+      var searchInput = document.getElementById('search-tasks');
       if (searchInput) {
         searchInput.addEventListener('input', function() {
-          const filter = this.value.toLowerCase();
-          document.querySelectorAll('.task-item').forEach(el => {
+          var filter = this.value.toLowerCase();
+          document.querySelectorAll('.task-item').forEach(function(el) {
             el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
           });
         });
@@ -522,28 +526,27 @@
 
       // Список задач
       if (data && data.length > 0) {
-        data.forEach(task => {
-          const dueDate = task.deadline ? new Date(task.deadline) : null;
-          let statusClass = 'green';
+        data.forEach(function(task) {
+          var dueDate = task.deadline ? new Date(task.deadline) : null;
+          var statusClass = 'green';
           if (dueDate) {
-            const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
+            var diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
             if (diff < 1) statusClass = 'red';
             else if (diff < 3) statusClass = 'yellow';
           }
 
-          const div = document.createElement('div');
+          var div = document.createElement('div');
           div.className = 'task-item glass-card';
-          div.innerHTML = `
-            <span>${task.title}</span>
-            <div>
-              <span class="deadline-indicator ${statusClass}"></span>
-              <button class="share-btn" data-type="task" data-id="${task.id}">${t('share')}</button>
-            </div>
-          `;
+          div.innerHTML = 
+            '<span>' + task.title + '</span>' +
+            '<div>' +
+              '<span class="deadline-indicator ' + statusClass + '"></span>' +
+              '<button class="share-btn" data-type="task" data-id="' + task.id + '">' + t('share') + '</button>' +
+            '</div>';
           content.appendChild(div);
 
           // Обработчик для кнопки "Поделиться"
-          const shareBtn = div.querySelector('.share-btn');
+          var shareBtn = div.querySelector('.share-btn');
           if (shareBtn) {
             shareBtn.addEventListener('click', function() {
               shareItem(this.dataset.type, this.dataset.id);
@@ -551,25 +554,25 @@
           }
         });
       } else {
-        const empty = document.createElement('div');
-        empty.className = 'glass-card';
-        empty.textContent = 'Нет задач';
+        var empty = document.createElement('div');
+        empty.className = 'glass-card empty-state';
+        empty.textContent = '📭 Нет задач';
         content.appendChild(empty);
       }
 
     } catch (err) {
       console.error('❌ Ошибка загрузки задач:', err);
-      content.innerHTML = `<div class="glass-card">Ошибка загрузки задач</div>`;
+      content.innerHTML = '<div class="glass-card">❌ Ошибка загрузки задач</div>';
     }
   }
 
   // --- ОТОБРАЖЕНИЕ ПЛАТЕЖЕЙ ---
   async function renderPayments() {
-    const content = document.getElementById('content');
-    content.innerHTML = '<div class="loading">Загрузка платежей...</div>';
+    var content = document.getElementById('content');
+    content.innerHTML = '<div class="loading">⏳ Загрузка платежей...</div>';
 
     try {
-      const { data, error } = await supabase
+      var { data, error } = await supabaseClient
         .from('payments')
         .select('*')
         .eq('telegram_id', telegramId);
@@ -578,14 +581,13 @@
 
       content.innerHTML = '';
 
-      const headerCard = document.createElement('div');
+      var headerCard = document.createElement('div');
       headerCard.className = 'glass-card';
-      headerCard.innerHTML = `
-        <div class="flex-between">
-          <input type="text" id="search-payments" placeholder="${t('search')}" />
-          <button id="add-payment-btn-main">${t('add')}</button>
-        </div>
-      `;
+      headerCard.innerHTML = 
+        '<div class="flex-between">' +
+          '<input type="text" id="search-payments" placeholder="' + t('search') + '" />' +
+          '<button id="add-payment-btn-main">' + t('add') + '</button>' +
+        '</div>';
       content.appendChild(headerCard);
 
       document.getElementById('add-payment-btn-main').addEventListener('click', function(e) {
@@ -593,38 +595,37 @@
         openForm('payments');
       });
 
-      const searchInput = document.getElementById('search-payments');
+      var searchInput = document.getElementById('search-payments');
       if (searchInput) {
         searchInput.addEventListener('input', function() {
-          const filter = this.value.toLowerCase();
-          document.querySelectorAll('.payment-item').forEach(el => {
+          var filter = this.value.toLowerCase();
+          document.querySelectorAll('.payment-item').forEach(function(el) {
             el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
           });
         });
       }
 
       if (data && data.length > 0) {
-        data.forEach(payment => {
-          const dueDate = payment.due_date ? new Date(payment.due_date) : null;
-          let statusClass = 'green';
+        data.forEach(function(payment) {
+          var dueDate = payment.due_date ? new Date(payment.due_date) : null;
+          var statusClass = 'green';
           if (dueDate) {
-            const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
+            var diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
             if (diff < 2) statusClass = 'red';
             else if (diff < 7) statusClass = 'yellow';
           }
 
-          const div = document.createElement('div');
+          var div = document.createElement('div');
           div.className = 'payment-item glass-card';
-          div.innerHTML = `
-            <span>${payment.title}</span>
-            <div>
-              <span class="deadline-indicator ${statusClass}"></span>
-              <button class="share-btn" data-type="payment" data-id="${payment.id}">${t('share')}</button>
-            </div>
-          `;
+          div.innerHTML = 
+            '<span>' + payment.title + '</span>' +
+            '<div>' +
+              '<span class="deadline-indicator ' + statusClass + '"></span>' +
+              '<button class="share-btn" data-type="payment" data-id="' + payment.id + '">' + t('share') + '</button>' +
+            '</div>';
           content.appendChild(div);
 
-          const shareBtn = div.querySelector('.share-btn');
+          var shareBtn = div.querySelector('.share-btn');
           if (shareBtn) {
             shareBtn.addEventListener('click', function() {
               shareItem(this.dataset.type, this.dataset.id);
@@ -632,79 +633,79 @@
           }
         });
       } else {
-        const empty = document.createElement('div');
-        empty.className = 'glass-card';
-        empty.textContent = 'Нет платежей';
+        var empty = document.createElement('div');
+        empty.className = 'glass-card empty-state';
+        empty.textContent = '📭 Нет платежей';
         content.appendChild(empty);
       }
 
     } catch (err) {
       console.error('❌ Ошибка загрузки платежей:', err);
-      content.innerHTML = `<div class="glass-card">Ошибка загрузки платежей</div>`;
+      content.innerHTML = '<div class="glass-card">❌ Ошибка загрузки платежей</div>';
     }
   }
 
   // --- ПОДЕЛИТЬСЯ ---
   async function shareItem(type, id) {
     try {
-      const link = `${window.location.origin}?shared_resource=${type}&id=${id}`;
+      var link = window.location.origin + '?shared_resource=' + type + '&id=' + id;
       await navigator.clipboard.writeText(link);
-      alert('Ссылка скопирована!');
+      alert('✅ Ссылка скопирована!');
     } catch (err) {
       console.error('❌ Ошибка копирования:', err);
-      alert('Не удалось скопировать ссылку');
+      alert('❌ Не удалось скопировать ссылку');
     }
   }
 
   // --- ЭКСПОРТ ---
   async function exportData() {
     try {
-      const [tasksRes, paymentsRes] = await Promise.all([
-        supabase.from('tasks').select('*').eq('telegram_id', telegramId),
-        supabase.from('payments').select('*').eq('telegram_id', telegramId)
+      var [tasksRes, paymentsRes] = await Promise.all([
+        supabaseClient.from('tasks').select('*').eq('telegram_id', telegramId),
+        supabaseClient.from('payments').select('*').eq('telegram_id', telegramId)
       ]);
 
-      const wb = XLSX.utils.book_new();
+      var wb = XLSX.utils.book_new();
       
-      if (tasksRes.data?.length) {
-        const ws = XLSX.utils.json_to_sheet(tasksRes.data);
+      if (tasksRes.data && tasksRes.data.length) {
+        var ws = XLSX.utils.json_to_sheet(tasksRes.data);
         XLSX.utils.book_append_sheet(wb, ws, "Tasks");
       }
-      if (paymentsRes.data?.length) {
-        const ws = XLSX.utils.json_to_sheet(paymentsRes.data);
+      if (paymentsRes.data && paymentsRes.data.length) {
+        var ws = XLSX.utils.json_to_sheet(paymentsRes.data);
         XLSX.utils.book_append_sheet(wb, ws, "Payments");
       }
 
-      XLSX.writeFile(wb, `tracker_data_${Date.now()}.xlsx`);
+      XLSX.writeFile(wb, 'tracker_data_' + Date.now() + '.xlsx');
+      alert('✅ Экспорт выполнен!');
     } catch (err) {
       console.error('❌ Ошибка экспорта:', err);
-      alert('Ошибка экспорта');
+      alert('❌ Ошибка экспорта');
     }
   }
 
   function importData() {
-    alert('Импорт: выберите файл Excel');
+    alert('📥 Импорт: выберите файл Excel');
   }
 
   // --- НАСТРОЙКИ ---
   function openSettings() {
-    const content = document.getElementById('content');
-    content.innerHTML = `
-      <div class="glass-card">
-        <h3>${t('settings')}</h3>
-        <p><label>${t('theme')}:</label> 
-          <button id="theme-toggle">Переключить</button>
-        </p>
-        <p><label>${t('language')}:</label>
-          <select id="lang-select">
-            <option value="ru" ${currentLang === 'ru' ? 'selected' : ''}>Русский</option>
-            <option value="en" ${currentLang === 'en' ? 'selected' : ''}>English</option>
-          </select>
-        </p>
-        <p><button id="export-btn">${t('export')}</button></p>
-        <p><button id="import-btn">${t('import')}</button></p>
-      </div>
-    `;
+    var content = document.getElementById('content');
+    content.innerHTML = 
+      '<div class="glass-card">' +
+        '<h3>' + t('settings') + '</h3>' +
+        '<p><label>' + t('theme') + ':</label> ' +
+          '<button id="theme-toggle">🌓 Переключить</button>' +
+        '</p>' +
+        '<p><label>' + t('language') + ':</label>' +
+          '<select id="lang-select">' +
+            '<option value="ru" ' + (currentLang === 'ru' ? 'selected' : '') + '>Русский</option>' +
+            '<option value="en" ' + (currentLang === 'en' ? 'selected' : '') + '>English</option>' +
+          '</select>' +
+        '</p>' +
+        '<p><button id="export-btn">' + t('export') + '</button></p>' +
+        '<p><button id="import-btn">' + t('import') + '</button></p>' +
+      '</div>';
 
     document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
     document.getElementById('lang-select').addEventListener('change', function() {
@@ -716,9 +717,9 @@
 
   // --- ПЕРЕКЛЮЧЕНИЕ ТЕМЫ ---
   async function toggleTheme() {
-    const isDark = document.body.classList.toggle('dark');
+    var isDark = document.body.classList.toggle('dark');
     try {
-      await supabase
+      await supabaseClient
         .from('profiles')
         .update({ theme: isDark ? 'dark' : 'light' })
         .eq('telegram_id', telegramId);
@@ -731,7 +732,7 @@
   async function changeLanguage(lang) {
     currentLang = lang;
     try {
-      await supabase
+      await supabaseClient
         .from('profiles')
         .update({ language: lang })
         .eq('telegram_id', telegramId);
@@ -757,8 +758,11 @@
   // --- НАВИГАЦИЯ ---
   function navigateTo(section) {
     currentSection = section;
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`.nav-btn[data-section="${section}"]`)?.classList.add('active');
+    document.querySelectorAll('.nav-btn').forEach(function(b) {
+      b.classList.remove('active');
+    });
+    var activeBtn = document.querySelector('.nav-btn[data-section="' + section + '"]');
+    if (activeBtn) activeBtn.classList.add('active');
     
     if (section === 'tasks') renderTasks();
     else if (section === 'payments') renderPayments();
@@ -767,20 +771,22 @@
 
   // --- ИНИЦИАЛИЗАЦИЯ ---
   function init() {
+    console.log('🚀 Инициализация приложения...');
+    
     // 1. Инициализация Telegram
     initTelegram();
 
     if (!telegramId) {
-      alert('Не удалось получить Telegram ID');
+      alert('❌ Не удалось получить Telegram ID');
       return;
     }
 
     // 2. Загрузка профиля
-    loadProfile().then(() => {
+    loadProfile().then(function() {
       updateUI();
       
       // 3. Навигация
-      document.querySelectorAll('.nav-btn').forEach(btn => {
+      document.querySelectorAll('.nav-btn').forEach(function(btn) {
         btn.addEventListener('click', function() {
           navigateTo(this.dataset.section);
         });
@@ -801,19 +807,19 @@
       // 6. Форма задачи
       document.getElementById('modal-form').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const title = document.getElementById('item-title').value;
-        const folder = document.getElementById('item-folder').value;
-        const priority = document.getElementById('item-priority').value;
-        const deadline = document.getElementById('item-deadline').value;
-        const tags = document.getElementById('item-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+        var title = document.getElementById('item-title').value;
+        var folder = document.getElementById('item-folder').value;
+        var priority = document.getElementById('item-priority').value;
+        var deadline = document.getElementById('item-deadline').value;
+        var tags = document.getElementById('item-tags').value.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
 
         try {
-          const { error } = await supabase.from('tasks').insert([{
+          var { error } = await supabaseClient.from('tasks').insert([{
             telegram_id: telegramId,
-            title,
+            title: title,
             folder_id: folder || null,
-            priority,
-            tags,
+            priority: priority,
+            tags: tags,
             deadline: deadline || null
           }]);
 
@@ -824,23 +830,23 @@
           renderTasks();
         } catch (err) {
           console.error('❌ Ошибка создания задачи:', err);
-          alert('Ошибка создания задачи');
+          alert('❌ Ошибка создания задачи');
         }
       });
 
       // 7. Форма платежа
       document.getElementById('modal-form-payment').addEventListener('submit', async function(e) {
         e.preventDefault();
-        const title = document.getElementById('payment-title').value;
-        const dueDate = document.getElementById('payment-due-date').value;
-        const recurrence = document.getElementById('payment-recurrence').value;
+        var title = document.getElementById('payment-title').value;
+        var dueDate = document.getElementById('payment-due-date').value;
+        var recurrence = document.getElementById('payment-recurrence').value;
 
         try {
-          const { error } = await supabase.from('payments').insert([{
+          var { error } = await supabaseClient.from('payments').insert([{
             telegram_id: telegramId,
-            title,
+            title: title,
             due_date: dueDate,
-            recurrence
+            recurrence: recurrence
           }]);
 
           if (error) throw error;
@@ -850,12 +856,14 @@
           renderPayments();
         } catch (err) {
           console.error('❌ Ошибка создания платежа:', err);
-          alert('Ошибка создания платежа');
+          alert('❌ Ошибка создания платежа');
         }
       });
 
       // 8. Загрузка задач по умолчанию
       renderTasks();
+      
+      console.log('✅ Приложение готово!');
     });
   }
 
