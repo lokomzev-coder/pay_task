@@ -41,7 +41,7 @@
     header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
     header h1 { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
     header .icon { width: 28px; height: 28px; stroke: currentColor; fill: none; stroke-width: 2; }
-    .nav-mobile { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; padding: 16px; background: var(--glass-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--glass-border); z-index: 100; }
+    .nav-mobile { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; padding: 16px; background: var(--glass-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--glass-border); z-index: 100; display: none; }
     .nav-btn { background: none; border: none; color: var(--text-primary); font-size: 0.75rem; cursor: pointer; padding: 6px 12px; border-radius: 8px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 2px; }
     .nav-btn .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
     .nav-btn.active { background: var(--accent); color: white; }
@@ -55,7 +55,6 @@
     button .icon { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2; }
     button.secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--glass-border); }
     button.secondary .icon { stroke: var(--text-primary); }
-    button.danger { background: var(--danger); }
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
     .modal-content { width: 90%; max-width: 500px; padding: 24px; border-radius: var(--border-radius); background: var(--bg-secondary); box-shadow: var(--glass-shadow); backdrop-filter: blur(10px); max-height: 90vh; overflow-y: auto; }
     .hidden { display: none !important; }
@@ -63,7 +62,6 @@
     .flex-between input { flex: 1; }
     .flex-between button { width: auto; }
     
-    /* Desktop navigation - скрываем по умолчанию, показываем только когда пользователь авторизован */
     .desktop-nav { 
       display: none; 
       flex-direction: column; 
@@ -96,7 +94,7 @@
     main.with-nav { margin-left: 220px; }
     
     @media (min-width: 768px) { 
-      .nav-mobile { display: none; } 
+      .nav-mobile { display: none !important; } 
       .desktop-nav.visible { display: flex; }
       main.with-nav { margin-left: 220px; }
       .container { padding-bottom: 20px; }
@@ -105,6 +103,7 @@
       .desktop-nav { display: none !important; }
       main.with-nav { margin-left: 0; }
       main.full-width { margin-left: 0; }
+      .nav-mobile { display: flex !important; }
     }
 
     .loading { text-align: center; padding: 40px; font-size: 18px; opacity: 0.7; }
@@ -114,6 +113,7 @@
     .user-badge .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
     .sync-status { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: var(--success); color: white; display: inline-block; }
     .sync-status.offline { background: var(--danger); }
+    .sync-status.loading { background: var(--warning); color: #333; }
     .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 20px; }
     .login-screen h2 { font-size: 28px; }
     .login-screen p { opacity: 0.7; max-width: 400px; }
@@ -127,7 +127,6 @@
     .export-options button { flex: 1; min-width: 100px; }
     .tag { display: inline-block; background: var(--glass-bg); padding: 2px 10px; border-radius: 12px; font-size: 12px; margin: 2px; }
     .flex-wrap { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    .hidden-nav { display: none !important; }
   </style>
 </head>
 <body class="light">
@@ -152,7 +151,7 @@
     </div>
   </header>
 
-  <!-- Desktop навигация - скрыта по умолчанию, показывается только при авторизации -->
+  <!-- Desktop навигация -->
   <div class="desktop-nav" id="desktop-nav">
     <button class="nav-btn active" data-section="tasks">
       <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -185,6 +184,7 @@
   </button>
 </div>
 
+<!-- Модальное окно для задач/платежей -->
 <div class="modal" id="modal">
   <div class="modal-content">
     <h3 id="modal-title">Новая задача</h3>
@@ -221,17 +221,18 @@
   </div>
 </div>
 
+<!-- Модальное окно для экспорта/импорта -->
 <div class="modal" id="export-modal">
   <div class="modal-content">
     <h3 id="export-title">Экспорт данных</h3>
     <div id="export-content">
       <p style="margin-bottom:16px;opacity:0.7;">Выберите формат для экспорта данных</p>
       <div class="export-options">
-        <button onclick="exportData('json')">
+        <button id="export-json-btn">
           <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>
           JSON
         </button>
-        <button onclick="exportData('excel')">
+        <button id="export-excel-btn">
           <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="16" x2="16" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="20" x2="13" y2="20"/></svg>
           Excel
         </button>
@@ -240,13 +241,13 @@
     <div id="import-content" class="hidden">
       <p style="margin-bottom:16px;opacity:0.7;">Выберите файл для импорта (JSON или Excel)</p>
       <input type="file" id="import-file" accept=".json,.xlsx,.xls" style="margin-bottom:12px;" />
-      <button onclick="importData()">
+      <button id="import-btn-main">
         <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>
         Импортировать
       </button>
-      <button class="secondary" onclick="closeExportModal()" style="margin-top:8px;">Отмена</button>
+      <button class="secondary" id="import-cancel-btn" style="margin-top:8px;">Отмена</button>
     </div>
-    <button class="secondary" onclick="closeExportModal()" style="margin-top:12px;">Закрыть</button>
+    <button class="secondary" id="export-close-btn" style="margin-top:12px;">Закрыть</button>
   </div>
 </div>
 
@@ -444,7 +445,7 @@
       el.className = 'sync-status';
     } else if (status === 'loading') {
       el.textContent = '⏳ ' + t('sync') + '...';
-      el.className = 'sync-status';
+      el.className = 'sync-status loading';
     } else {
       el.textContent = '📴 ' + t('offline');
       el.className = 'sync-status offline';
@@ -471,7 +472,6 @@
   // 6. ЛОГИН СКРИН
   // ============================================================
   function renderLoginScreen() {
-    // Скрываем навигацию
     showNavigation(false);
     
     var content = document.getElementById('content');
@@ -535,42 +535,406 @@
   }
 
   // ============================================================
-  // 8-15. ВСЕ ОСТАЛЬНЫЕ ФУНКЦИИ (ЗАДАЧИ, ПЛАТЕЖИ, НАСТРОЙКИ И Т.Д.)
+  // 8. ЗАГРУЗКА ПАПОК
   // ============================================================
-  // (функции renderTasks, renderPayments, openSettings и др. остаются без изменений)
-  // Для краткости я их не повторяю, но они должны быть такими же как в предыдущей версии
-
-  // ============================================================
-  // 16. ИНИЦИАЛИЗАЦИЯ
-  // ============================================================
-  function init() {
-    // Скрываем навигацию по умолчанию
-    showNavigation(false);
-    
-    var hasTelegram = initTelegram();
-    if (!hasTelegram || !telegramId) {
-      renderLoginScreen();
-      return;
+  async function loadFolders() {
+    try {
+      var { data, error } = await supabaseClient
+        .from('folders')
+        .select('id, name')
+        .eq('telegram_id', telegramId);
+      if (error) throw error;
+      var select = document.getElementById('item-folder');
+      select.innerHTML = '<option value="">' + t('no_folder') + '</option>';
+      if (data && data.length) {
+        data.forEach(function(f) {
+          var opt = document.createElement('option');
+          opt.value = f.id;
+          opt.textContent = f.name;
+          select.appendChild(opt);
+        });
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки папок:', err);
     }
-    
-    // Показываем навигацию после авторизации
-    showNavigation(true);
-    updateUserUI();
-    loadProfile().then(function() {
-      updateUI();
-      setupNavigation();
-      setupModal();
-      setupForms();
-      renderTasks();
-    });
   }
 
-  // Обёртка для функций, которые могут вызываться до инициализации
-  function setupNavigation() {
-    document.querySelectorAll('.nav-btn').forEach(function(btn) {
-      btn.onclick = function() { navigateTo(this.dataset.section); };
-    });
-    document.getElementById('settings-btn').onclick = function() { navigateTo('settings'); };
+  // ============================================================
+  // 9. ЗАДАЧИ
+  // ============================================================
+  async function renderTasks() {
+    var content = document.getElementById('content');
+    content.innerHTML = '<div class="loading">' + t('loading') + '</div>';
+
+    try {
+      var { data, error } = await supabaseClient
+        .from('tasks')
+        .select('*')
+        .eq('telegram_id', telegramId);
+      if (error) throw error;
+      content.innerHTML = '';
+
+      var header = document.createElement('div');
+      header.className = 'glass-card';
+      header.innerHTML = 
+        '<div class="flex-between">' +
+          '<input type="text" id="search-tasks" placeholder="' + t('search') + '" />' +
+          '<button id="add-task-btn-main">' +
+            '<svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+            t('add') +
+          '</button>' +
+        '</div>';
+      content.appendChild(header);
+
+      document.getElementById('add-task-btn-main').onclick = function() { openForm('tasks'); };
+      document.getElementById('search-tasks').oninput = function() {
+        var f = this.value.toLowerCase();
+        document.querySelectorAll('.task-item').forEach(function(el) {
+          el.style.display = el.textContent.toLowerCase().includes(f) ? '' : 'none';
+        });
+      };
+
+      if (data && data.length) {
+        data.forEach(function(task) {
+          var due = task.deadline ? new Date(task.deadline) : null;
+          var cls = 'green';
+          if (due) {
+            var diff = (due - new Date()) / (1000*60*60*24);
+            if (diff < 1) cls = 'red';
+            else if (diff < 3) cls = 'yellow';
+          }
+          var div = document.createElement('div');
+          div.className = 'task-item glass-card';
+          var tagsHtml = (task.tags && task.tags.length) ? 
+            task.tags.map(function(tag) { return '<span class="tag">' + tag + '</span>'; }).join('') : '';
+          div.innerHTML = 
+            '<div><strong>' + task.title + '</strong>' + 
+            (tagsHtml ? '<div class="flex-wrap" style="margin-top:4px;">' + tagsHtml + '</div>' : '') +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              '<span class="deadline-indicator ' + cls + '"></span>' +
+              '<button class="icon-btn share-btn" data-type="task" data-id="' + task.id + '">' +
+                '<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
+              '</button>' +
+            '</div>';
+          content.appendChild(div);
+          div.querySelector('.share-btn').onclick = function() {
+            shareItem(this.dataset.type, this.dataset.id);
+          };
+        });
+      } else {
+        var empty = document.createElement('div');
+        empty.className = 'glass-card empty-state';
+        empty.textContent = t('no_tasks');
+        content.appendChild(empty);
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки задач:', err);
+      content.innerHTML = '<div class="glass-card error-msg">' + t('error') + '</div>';
+    }
+  }
+
+  // ============================================================
+  // 10. ПЛАТЕЖИ
+  // ============================================================
+  async function renderPayments() {
+    var content = document.getElementById('content');
+    content.innerHTML = '<div class="loading">' + t('loading') + '</div>';
+
+    try {
+      var { data, error } = await supabaseClient
+        .from('payments')
+        .select('*')
+        .eq('telegram_id', telegramId);
+      if (error) throw error;
+      content.innerHTML = '';
+
+      var header = document.createElement('div');
+      header.className = 'glass-card';
+      header.innerHTML = 
+        '<div class="flex-between">' +
+          '<input type="text" id="search-payments" placeholder="' + t('search') + '" />' +
+          '<button id="add-payment-btn-main">' +
+            '<svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+            t('add') +
+          '</button>' +
+        '</div>';
+      content.appendChild(header);
+
+      document.getElementById('add-payment-btn-main').onclick = function() { openForm('payments'); };
+      document.getElementById('search-payments').oninput = function() {
+        var f = this.value.toLowerCase();
+        document.querySelectorAll('.payment-item').forEach(function(el) {
+          el.style.display = el.textContent.toLowerCase().includes(f) ? '' : 'none';
+        });
+      };
+
+      if (data && data.length) {
+        data.forEach(function(p) {
+          var due = p.due_date ? new Date(p.due_date) : null;
+          var cls = 'green';
+          if (due) {
+            var diff = (due - new Date()) / (1000*60*60*24);
+            if (diff < 2) cls = 'red';
+            else if (diff < 7) cls = 'yellow';
+          }
+          var div = document.createElement('div');
+          div.className = 'payment-item glass-card';
+          div.innerHTML = 
+            '<div><strong>' + p.title + '</strong>' +
+            (p.recurrence ? '<div style="font-size:12px;opacity:0.7;">' + getRecurrenceLabel(p.recurrence) + '</div>' : '') +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:8px;">' +
+              '<span class="deadline-indicator ' + cls + '"></span>' +
+              '<button class="icon-btn share-btn" data-type="payment" data-id="' + p.id + '">' +
+                '<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
+              '</button>' +
+            '</div>';
+          content.appendChild(div);
+          div.querySelector('.share-btn').onclick = function() {
+            shareItem(this.dataset.type, this.dataset.id);
+          };
+        });
+      } else {
+        var empty = document.createElement('div');
+        empty.className = 'glass-card empty-state';
+        empty.textContent = t('no_payments');
+        content.appendChild(empty);
+      }
+    } catch (err) {
+      console.error('Ошибка загрузки платежей:', err);
+      content.innerHTML = '<div class="glass-card error-msg">' + t('error') + '</div>';
+    }
+  }
+
+  // ============================================================
+  // 11. ШАРИНГ
+  // ============================================================
+  async function shareItem(type, id) {
+    try {
+      var link = window.location.origin + '?share=' + type + '&id=' + id;
+      await navigator.clipboard.writeText(link);
+      alert('✅ ' + t('share') + '!');
+    } catch (err) {
+      alert('❌ ' + t('error'));
+    }
+  }
+
+  // ============================================================
+  // 12. ЭКСПОРТ/ИМПОРТ
+  // ============================================================
+  function openExportModal() {
+    var modal = document.getElementById('export-modal');
+    document.getElementById('export-title').textContent = t('export_title');
+    document.getElementById('export-content').classList.remove('hidden');
+    document.getElementById('import-content').classList.add('hidden');
+    modal.style.display = 'flex';
+  }
+
+  function openImportModal() {
+    var modal = document.getElementById('export-modal');
+    document.getElementById('export-title').textContent = t('import_title');
+    document.getElementById('export-content').classList.add('hidden');
+    document.getElementById('import-content').classList.remove('hidden');
+    document.getElementById('import-file').value = '';
+    modal.style.display = 'flex';
+  }
+
+  function closeExportModal() {
+    document.getElementById('export-modal').style.display = 'none';
+  }
+
+  async function exportData(format) {
+    try {
+      var [tasksRes, paymentsRes] = await Promise.all([
+        supabaseClient.from('tasks').select('*').eq('telegram_id', telegramId),
+        supabaseClient.from('payments').select('*').eq('telegram_id', telegramId)
+      ]);
+
+      var data = {
+        tasks: tasksRes.data || [],
+        payments: paymentsRes.data || [],
+        exported_at: new Date().toISOString(),
+        version: '1.0'
+      };
+
+      if (format === 'json') {
+        var json = JSON.stringify(data, null, 2);
+        var blob = new Blob([json], { type: 'application/json' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'tracker_data_' + Date.now() + '.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } else if (format === 'excel') {
+        var wb = XLSX.utils.book_new();
+        if (data.tasks.length) {
+          var wsTasks = XLSX.utils.json_to_sheet(data.tasks);
+          XLSX.utils.book_append_sheet(wb, wsTasks, 'Tasks');
+        }
+        if (data.payments.length) {
+          var wsPayments = XLSX.utils.json_to_sheet(data.payments);
+          XLSX.utils.book_append_sheet(wb, wsPayments, 'Payments');
+        }
+        XLSX.writeFile(wb, 'tracker_data_' + Date.now() + '.xlsx');
+      }
+      
+      alert('✅ ' + t('export_success'));
+      closeExportModal();
+    } catch (err) {
+      console.error('Ошибка экспорта:', err);
+      alert('❌ ' + t('error'));
+    }
+  }
+
+  async function importData() {
+    var fileInput = document.getElementById('import-file');
+    var file = fileInput.files[0];
+    if (!file) {
+      alert(t('select_file'));
+      return;
+    }
+
+    try {
+      var text = await file.text();
+      var data;
+      
+      if (file.name.endsWith('.json')) {
+        data = JSON.parse(text);
+      } else {
+        var workbook = XLSX.read(text, { type: 'string' });
+        data = { tasks: [], payments: [] };
+        if (workbook.Sheets['Tasks']) {
+          data.tasks = XLSX.utils.sheet_to_json(workbook.Sheets['Tasks']);
+        }
+        if (workbook.Sheets['Payments']) {
+          data.payments = XLSX.utils.sheet_to_json(workbook.Sheets['Payments']);
+        }
+      }
+
+      if (!data.tasks && !data.payments) {
+        alert(t('import_error'));
+        return;
+      }
+
+      if (data.tasks && data.tasks.length) {
+        var tasksToInsert = data.tasks.map(function(t) {
+          return {
+            telegram_id: telegramId,
+            title: t.title || t.name || 'Без названия',
+            folder_id: t.folder_id || null,
+            priority: t.priority || 'medium',
+            tags: t.tags || [],
+            deadline: t.deadline || null
+          };
+        });
+        await supabaseClient.from('tasks').insert(tasksToInsert);
+      }
+
+      if (data.payments && data.payments.length) {
+        var paymentsToInsert = data.payments.map(function(p) {
+          return {
+            telegram_id: telegramId,
+            title: p.title || p.name || 'Без названия',
+            due_date: p.due_date || p.dueDate || null,
+            recurrence: p.recurrence || '1m'
+          };
+        });
+        await supabaseClient.from('payments').insert(paymentsToInsert);
+      }
+
+      alert('✅ ' + t('import_success'));
+      closeExportModal();
+      if (currentSection === 'tasks') renderTasks();
+      else if (currentSection === 'payments') renderPayments();
+      
+    } catch (err) {
+      console.error('Ошибка импорта:', err);
+      alert('❌ ' + t('import_error'));
+    }
+  }
+
+  // ============================================================
+  // 13. НАСТРОЙКИ
+  // ============================================================
+  function openSettings() {
+    var content = document.getElementById('content');
+    content.innerHTML = 
+      '<div class="glass-card">' +
+        '<h3>' + t('settings_title') + '</h3>' +
+        '<div style="margin:12px 0;">' +
+          '<label style="display:block;margin-bottom:4px;">' + t('theme') + '</label>' +
+          '<button id="theme-toggle" style="width:100%;">' +
+            '<svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>' +
+            ' ' + (document.body.classList.contains('dark') ? t('light') : t('dark')) +
+          '</button>' +
+        '</div>' +
+        '<div style="margin:12px 0;">' +
+          '<label style="display:block;margin-bottom:4px;">' + t('language') + '</label>' +
+          '<select id="lang-select" style="width:100%;">' +
+            '<option value="ru" ' + (currentLang === 'ru' ? 'selected' : '') + '>' + t('russian') + '</option>' +
+            '<option value="en" ' + (currentLang === 'en' ? 'selected' : '') + '>' + t('english') + '</option>' +
+          '</select>' +
+        '</div>' +
+        '<hr style="margin:16px 0;opacity:0.2;">' +
+        '<div style="margin:12px 0;">' +
+          '<button id="settings-export-btn" style="width:100%;margin-bottom:8px;">' +
+            '<svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>' +
+            ' ' + t('export') +
+          '</button>' +
+          '<button id="settings-import-btn" style="width:100%;">' +
+            '<svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>' +
+            ' ' + t('import') +
+          '</button>' +
+        '</div>' +
+        '<hr style="margin:16px 0;opacity:0.2;">' +
+        '<div style="font-size:12px;opacity:0.5;">👤 ID: ' + telegramId + '</div>' +
+      '</div>';
+
+    document.getElementById('theme-toggle').onclick = toggleTheme;
+    document.getElementById('lang-select').onchange = function() { changeLanguage(this.value); };
+    document.getElementById('settings-export-btn').onclick = openExportModal;
+    document.getElementById('settings-import-btn').onclick = openImportModal;
+  }
+
+  // ============================================================
+  // 14. ТЕМА
+  // ============================================================
+  async function toggleTheme() {
+    var isDark = document.body.classList.toggle('dark');
+    try {
+      await supabaseClient.from('profiles').update({ theme: isDark ? 'dark' : 'light' }).eq('telegram_id', telegramId);
+    } catch (err) {}
+    openSettings();
+  }
+
+  // ============================================================
+  // 15. ЯЗЫК
+  // ============================================================
+  async function changeLanguage(lang) {
+    currentLang = lang;
+    try {
+      await supabaseClient.from('profiles').update({ language: lang }).eq('telegram_id', telegramId);
+    } catch (err) {}
+    updateUI();
+    if (currentSection === 'tasks') renderTasks();
+    else if (currentSection === 'payments') renderPayments();
+    else if (currentSection === 'settings') openSettings();
+  }
+
+  // ============================================================
+  // 16. ФОРМЫ
+  // ============================================================
+  function openForm(section) {
+    currentSection = section;
+    document.getElementById('modal-title').textContent = section === 'tasks' ? t('new_task') : t('new_payment');
+    document.getElementById('modal-form').classList.toggle('hidden', section !== 'tasks');
+    document.getElementById('modal-form-payment').classList.toggle('hidden', section !== 'payments');
+    document.getElementById('modal').style.display = 'flex';
+    if (section === 'tasks') loadFolders();
   }
 
   function setupModal() {
@@ -580,6 +944,13 @@
     document.getElementById('export-modal').onclick = function(e) {
       if (e.target === this) this.style.display = 'none';
     };
+    
+    // Кнопки экспорта/импорта
+    document.getElementById('export-json-btn').onclick = function() { exportData('json'); };
+    document.getElementById('export-excel-btn').onclick = function() { exportData('excel'); };
+    document.getElementById('import-btn-main').onclick = importData;
+    document.getElementById('import-cancel-btn').onclick = closeExportModal;
+    document.getElementById('export-close-btn').onclick = closeExportModal;
   }
 
   function setupForms() {
@@ -597,8 +968,11 @@
         folder_id: folder || null, priority: priority,
         tags: tags, deadline: deadline || null
       }]);
-      if (error) { alert('❌ ' + t('error')); setSyncStatus('error'); }
-      else {
+      if (error) { 
+        alert('❌ ' + t('error')); 
+        setSyncStatus('error');
+        console.error(error);
+      } else {
         document.getElementById('modal').style.display = 'none';
         this.reset();
         renderTasks();
@@ -617,8 +991,11 @@
         telegram_id: telegramId, title: title,
         due_date: dueDate, recurrence: recurrence
       }]);
-      if (error) { alert('❌ ' + t('error')); setSyncStatus('error'); }
-      else {
+      if (error) { 
+        alert('❌ ' + t('error')); 
+        setSyncStatus('error');
+        console.error(error);
+      } else {
         document.getElementById('modal').style.display = 'none';
         this.reset();
         renderPayments();
@@ -628,7 +1005,53 @@
   }
 
   // ============================================================
-  // ЗАПУСК
+  // 17. НАВИГАЦИЯ
+  // ============================================================
+  function setupNavigation() {
+    document.querySelectorAll('.nav-btn').forEach(function(btn) {
+      btn.onclick = function() { navigateTo(this.dataset.section); };
+    });
+    document.getElementById('settings-btn').onclick = function() { navigateTo('settings'); };
+  }
+
+  function navigateTo(section) {
+    currentSection = section;
+    document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
+    var btn = document.querySelector('.nav-btn[data-section="' + section + '"]');
+    if (btn) btn.classList.add('active');
+    if (section === 'tasks') renderTasks();
+    else if (section === 'payments') renderPayments();
+    else if (section === 'settings') openSettings();
+  }
+
+  // ============================================================
+  // 18. ИНИЦИАЛИЗАЦИЯ
+  // ============================================================
+  function init() {
+    console.log('🚀 Инициализация...');
+    
+    showNavigation(false);
+    
+    var hasTelegram = initTelegram();
+    if (!hasTelegram || !telegramId) {
+      renderLoginScreen();
+      return;
+    }
+    
+    showNavigation(true);
+    updateUserUI();
+    loadProfile().then(function() {
+      updateUI();
+      setupNavigation();
+      setupModal();
+      setupForms();
+      renderTasks();
+      console.log('✅ Приложение готово!');
+    });
+  }
+
+  // ============================================================
+  // 19. ЗАПУСК
   // ============================================================
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
