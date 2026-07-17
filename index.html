@@ -279,6 +279,8 @@
   var SUPABASE_URL = 'https://lzwbdobhodwdmjzcmdjs.supabase.co';
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw';
   
+  var BOT_USERNAME = "pay_task0_bot"; // Имя вашего бота (без @)
+  
   var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   var telegramId = null;
   var currentSection = 'tasks';
@@ -317,9 +319,7 @@
       welcome: 'Добро пожаловать!', guest: 'Гость',
       sync: 'Синхр.', offline: 'Офлайн',
       dark: 'Тёмная', light: 'Светлая',
-      russian: 'Русский', english: 'English',
-      open_in_telegram: 'Откройте приложение в Telegram для авторизации',
-      bot_login: 'Или используйте бота:'
+      russian: 'Русский', english: 'English'
     },
     en: {
       tasks: 'Tasks', payments: 'Payments', settings: 'Settings',
@@ -348,9 +348,7 @@
       welcome: 'Welcome!', guest: 'Guest',
       sync: 'Sync', offline: 'Offline',
       dark: 'Dark', light: 'Light',
-      russian: 'Russian', english: 'English',
-      open_in_telegram: 'Open the app in Telegram to login',
-      bot_login: 'Or use the bot:'
+      russian: 'Russian', english: 'English'
     }
   };
 
@@ -385,16 +383,18 @@
   }
 
   // ============================================================
-  // 4. АВТОРИЗАЦИЯ ЧЕРЕЗ TELEGRAM
+  // 4. АВТОРИЗАЦИЯ (автоматическая в Telegram)
   // ============================================================
-  function initTelegram() {
+  function initAuth() {
     try {
-      // Проверяем наличие Telegram WebApp
+      // Проверяем, запущено ли в Telegram WebApp
       if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
         Telegram.WebApp.ready();
+        
         var user = Telegram.WebApp.initDataUnsafe?.user;
         
         if (user) {
+          // ✅ Автоматический вход в Telegram
           telegramId = String(user.id);
           userData = {
             id: String(user.id),
@@ -404,32 +404,18 @@
             photoUrl: user.photo_url || null
           };
           isAuthorized = true;
-          console.log('✅ Авторизован в Telegram:', userData.username, 'ID:', telegramId);
+          console.log('✅ Автоматический вход в Telegram:', userData.username, 'ID:', telegramId);
           return true;
         } else {
-          console.warn('⚠️ Telegram WebApp есть, но пользователь не авторизован');
+          // В Telegram, но пользователь не авторизован (маловероятно)
+          console.warn('⚠️ Telegram WebApp есть, но пользователь не найден');
           isAuthorized = false;
           return false;
         }
       }
       
-      // Если не в Telegram - пробуем получить ID из URL (для бота)
-      var urlParams = new URLSearchParams(window.location.search);
-      var botUserId = urlParams.get('user_id');
-      if (botUserId) {
-        telegramId = botUserId;
-        userData = {
-          id: botUserId,
-          username: 'Пользователь бота',
-          firstName: 'Бот',
-          lastName: ''
-        };
-        isAuthorized = true;
-        console.log('✅ Авторизован через бота, ID:', telegramId);
-        return true;
-      }
-      
-      console.warn('⚠️ Не в Telegram и нет user_id в URL');
+      // Если не в Telegram - показываем экран входа
+      console.log('🌐 Приложение открыто в браузере');
       isAuthorized = false;
       return false;
       
@@ -490,7 +476,7 @@
   }
 
   // ============================================================
-  // 6. ЛОГИН СКРИН
+  // 6. ЭКРАН ВХОДА ДЛЯ БРАУЗЕРА
   // ============================================================
   function renderLoginScreen() {
     showNavigation(false);
@@ -498,40 +484,33 @@
     var content = document.getElementById('content');
     content.innerHTML = `
       <div class="login-screen">
-        <svg class="login-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        <svg class="login-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M22 2L11 13"/>
+          <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
         <h2>${t('login_title')}</h2>
         <p>${t('login_desc')}</p>
+        
         <button class="telegram-login" id="telegram-login-btn">
-          <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 2L11 13"/>
+            <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+          </svg>
           ${t('login_btn')}
         </button>
+        
         <div class="bot-login-hint">
-          ${t('open_in_telegram')}
-          <br>
-          ${t('bot_login')} <a href="#" id="bot-link">@pay_task0_bot</a>
+          📱 Откройте в Telegram: <a href="https://t.me/${BOT_USERNAME}" target="_blank">@${BOT_USERNAME}</a>
         </div>
-        <div style="font-size:11px;opacity:0.4;margin-top:8px;">
+        
+        <div style="font-size:11px;opacity:0.3;margin-top:8px;">
           🔒 Данные синхронизируются через Telegram
         </div>
       </div>
     `;
     
-    // Кнопка входа через Telegram
     document.getElementById('telegram-login-btn').onclick = function() {
-      if (window.Telegram && Telegram.WebApp) {
-        // Если уже в Telegram, но не авторизован
-        Telegram.WebApp.openLink('https://t.me/' + (Telegram.WebApp.initDataUnsafe?.user?.username || ''));
-      } else {
-        // Если не в Telegram - открываем бота
-        var botUsername = '@pay_task0_bot'; // Замените на имя вашего бота
-        window.open('https://t.me/' + botUsername.replace('@', ''), '_blank');
-      }
-    };
-    
-    // Ссылка на бота
-    document.getElementById('bot-link').onclick = function(e) {
-      e.preventDefault();
-      window.open('https://t.me/pay_task0_bot', '_blank');
+      window.open('https://t.me/' + BOT_USERNAME, '_blank');
     };
   }
 
@@ -1091,26 +1070,27 @@
     
     showNavigation(false);
     
-    var hasTelegram = initTelegram();
+    // Пробуем авторизоваться через Telegram
+    var hasAuth = initAuth();
     
-    // Если не авторизован - показываем экран входа
-    if (!isAuthorized || !telegramId) {
+    if (hasAuth && telegramId) {
+      // ✅ В Telegram - автоматический вход
+      console.log('👤 Автоматический вход в Telegram, ID:', telegramId);
+      showNavigation(true);
+      updateUserUI();
+      loadProfile().then(function() {
+        updateUI();
+        setupNavigation();
+        setupModal();
+        setupForms();
+        renderTasks();
+        console.log('✅ Приложение готово!');
+      });
+    } else {
+      // ❌ В браузере - показываем экран входа
+      console.log('🌐 Показываем экран входа для браузера');
       renderLoginScreen();
-      return;
     }
-    
-    // Авторизован - загружаем данные
-    console.log('👤 Пользователь авторизован, ID:', telegramId);
-    showNavigation(true);
-    updateUserUI();
-    loadProfile().then(function() {
-      updateUI();
-      setupNavigation();
-      setupModal();
-      setupForms();
-      renderTasks();
-      console.log('✅ Приложение готово!');
-    });
   }
 
   // ============================================================
