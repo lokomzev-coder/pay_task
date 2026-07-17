@@ -128,13 +128,6 @@
     .sync-status.offline { background: var(--danger); }
     .sync-status.loading { background: var(--warning); color: #333; }
     
-    .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 16px; }
-    .login-screen h2 { font-size: 24px; }
-    .login-screen p { opacity: 0.6; max-width: 360px; font-size: 14px; }
-    .login-icon { width: 64px; height: 64px; stroke: var(--accent); fill: none; stroke-width: 1.5; }
-    .telegram-login { background: #0088cc; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; padding: 14px 32px; width: 100%; max-width: 280px; border-radius: 12px; border: none; color: white; cursor: pointer; }
-    .telegram-login:hover { background: #006699; }
-    .telegram-login .icon { stroke: white; width: 22px; height: 22px; }
     .icon-btn { background: none; border: none; cursor: pointer; padding: 4px 6px; display: inline-flex; align-items: center; border-radius: 8px; }
     .icon-btn:hover { background: var(--glass-bg); }
     .icon-btn .icon { width: 20px; height: 20px; stroke: var(--text-primary); fill: none; stroke-width: 2; }
@@ -148,10 +141,30 @@
     .settings-row:last-child { border-bottom: none; }
     .settings-row label { font-size: 14px; font-weight: 600; }
     .settings-row select, .settings-row button { width: auto; margin: 0; }
-    
-    .bot-login-hint { font-size: 12px; opacity: 0.5; margin-top: 12px; padding: 12px; background: var(--glass-bg); border-radius: 8px; border: 1px dashed var(--glass-border); }
-    .bot-login-hint a { color: var(--accent); text-decoration: none; }
-    .bot-login-hint a:hover { text-decoration: underline; }
+
+    /* Браузерный режим - просто показываем уведомление */
+    .browser-notice { 
+      text-align: center; 
+      padding: 40px 20px; 
+      max-width: 500px; 
+      margin: 40px auto;
+    }
+    .browser-notice .icon-big { width: 80px; height: 80px; stroke: var(--accent); fill: none; stroke-width: 1.5; margin-bottom: 16px; }
+    .browser-notice h2 { margin-bottom: 12px; }
+    .browser-notice p { opacity: 0.6; margin-bottom: 20px; }
+    .browser-notice .telegram-link { 
+      display: inline-flex; 
+      align-items: center; 
+      gap: 10px; 
+      background: #0088cc; 
+      color: white; 
+      padding: 12px 24px; 
+      border-radius: 12px; 
+      text-decoration: none; 
+      font-weight: 600;
+    }
+    .browser-notice .telegram-link:hover { background: #006699; }
+    .browser-notice .telegram-link .icon { stroke: white; width: 22px; height: 22px; }
   </style>
 </head>
 <body class="light">
@@ -286,7 +299,6 @@
   var currentSection = 'tasks';
   var currentLang = 'ru';
   var userData = null;
-  var isAuthorized = false;
   var isInTelegram = false;
 
   // ============================================================
@@ -314,13 +326,10 @@
       import_success: 'Импорт выполнен успешно!',
       import_error: 'Ошибка импорта. Проверьте формат файла.',
       select_file: 'Выберите файл...',
-      login_title: 'Вход через Telegram',
-      login_desc: 'Нажмите кнопку ниже, чтобы войти через Telegram',
-      login_btn: 'Войти через Telegram',
-      welcome: 'Добро пожаловать!', guest: 'Гость',
       sync: 'Синхр.', offline: 'Офлайн',
       dark: 'Тёмная', light: 'Светлая',
-      russian: 'Русский', english: 'English'
+      russian: 'Русский', english: 'English',
+      open_in_telegram: 'Откройте в Telegram для синхронизации'
     },
     en: {
       tasks: 'Tasks', payments: 'Payments', settings: 'Settings',
@@ -343,13 +352,10 @@
       import_success: 'Import successful!',
       import_error: 'Import error. Check file format.',
       select_file: 'Select file...',
-      login_title: 'Login via Telegram',
-      login_desc: 'Click the button below to login via Telegram',
-      login_btn: 'Login via Telegram',
-      welcome: 'Welcome!', guest: 'Guest',
       sync: 'Sync', offline: 'Offline',
       dark: 'Dark', light: 'Light',
-      russian: 'Russian', english: 'English'
+      russian: 'Russian', english: 'English',
+      open_in_telegram: 'Open in Telegram for sync'
     }
   };
 
@@ -384,19 +390,15 @@
   }
 
   // ============================================================
-  // 4. АВТОРИЗАЦИЯ
+  // 4. ПОЛУЧЕНИЕ TELEGRAM ID
   // ============================================================
-  function initAuth() {
+  function getTelegramId() {
     try {
-      // Проверяем, запущено ли в Telegram WebApp
       if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
         Telegram.WebApp.ready();
         isInTelegram = true;
-        
         var user = Telegram.WebApp.initDataUnsafe?.user;
-        
         if (user) {
-          // ✅ В Telegram - автоматический вход!
           telegramId = String(user.id);
           userData = {
             id: String(user.id),
@@ -405,27 +407,17 @@
             lastName: user.last_name || '',
             photoUrl: user.photo_url || null
           };
-          isAuthorized = true;
-          console.log('✅ Автоматический вход в Telegram:', userData.username, 'ID:', telegramId);
+          console.log('✅ Telegram ID получен:', telegramId, 'Пользователь:', userData.username);
           return true;
-        } else {
-          // В Telegram, но пользователь не найден (редко)
-          console.warn('⚠️ Telegram WebApp есть, но пользователь не найден');
-          isAuthorized = false;
-          return false;
         }
       }
-      
-      // ❌ Не в Telegram
-      console.log('🌐 Приложение открыто в браузере');
+      // Не в Telegram
       isInTelegram = false;
-      isAuthorized = false;
+      console.log('🌐 Не в Telegram');
       return false;
-      
     } catch (e) {
-      console.error('❌ Ошибка авторизации:', e);
+      console.error('❌ Ошибка получения ID:', e);
       isInTelegram = false;
-      isAuthorized = false;
       return false;
     }
   }
@@ -437,12 +429,12 @@
     if (!userData) return;
     var nameEl = document.getElementById('user-name');
     var avatarEl = document.getElementById('user-avatar');
-    if (nameEl) nameEl.textContent = userData.username || userData.firstName || t('guest');
+    if (nameEl) nameEl.textContent = userData.username || 'Пользователь';
     if (avatarEl) {
       if (userData.photoUrl) {
         avatarEl.innerHTML = '<img src="' + userData.photoUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
       } else {
-        var letter = (userData.firstName || t('guest'))[0].toUpperCase();
+        var letter = (userData.firstName || 'П')[0].toUpperCase();
         avatarEl.textContent = letter;
       }
     }
@@ -480,42 +472,31 @@
   }
 
   // ============================================================
-  // 6. ЭКРАН ВХОДА (ТОЛЬКО ДЛЯ БРАУЗЕРА)
+  // 6. БРАУЗЕРНЫЙ РЕЖИМ - ПРОСТОЕ УВЕДОМЛЕНИЕ
   // ============================================================
-  function renderLoginScreen() {
+  function renderBrowserMode() {
     showNavigation(false);
-    
     var content = document.getElementById('content');
     content.innerHTML = `
-      <div class="login-screen">
-        <svg class="login-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <div class="browser-notice">
+        <svg class="icon-big" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M22 2L11 13"/>
           <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
         </svg>
-        <h2>${t('login_title')}</h2>
-        <p>${t('login_desc')}</p>
-        
-        <button class="telegram-login" id="telegram-login-btn">
+        <h2>📱 Откройте в Telegram</h2>
+        <p>${t('open_in_telegram')}</p>
+        <a href="https://t.me/${BOT_USERNAME}" target="_blank" class="telegram-link">
           <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 2L11 13"/>
             <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
           </svg>
-          ${t('login_btn')}
-        </button>
-        
-        <div class="bot-login-hint">
-          📱 Откройте в Telegram: <a href="https://t.me/${BOT_USERNAME}" target="_blank">@${BOT_USERNAME}</a>
-        </div>
-        
-        <div style="font-size:11px;opacity:0.3;margin-top:8px;">
-          🔒 Данные синхронизируются через Telegram
+          @${BOT_USERNAME}
+        </a>
+        <div style="margin-top:20px;font-size:12px;opacity:0.3;">
+          🔒 Данные синхронизируются через Telegram ID
         </div>
       </div>
     `;
-    
-    document.getElementById('telegram-login-btn').onclick = function() {
-      window.open('https://t.me/' + BOT_USERNAME, '_blank');
-    };
   }
 
   // ============================================================
@@ -549,7 +530,7 @@
           .from('profiles')
           .insert([{ 
             telegram_id: telegramId, 
-            username: userData?.username || t('guest'),
+            username: userData?.username || 'Пользователь',
             language: 'ru',
             theme: 'light'
           }]);
@@ -1072,15 +1053,12 @@
   function init() {
     console.log('🚀 Инициализация...');
     
-    // Скрываем навигацию до авторизации
-    showNavigation(false);
+    // Пробуем получить Telegram ID
+    var hasId = getTelegramId();
     
-    // Пробуем авторизоваться через Telegram
-    var hasAuth = initAuth();
-    
-    if (hasAuth && telegramId) {
-      // ✅ В Telegram - сразу в задачи!
-      console.log('👤 Автоматический вход, ID:', telegramId);
+    if (hasId && telegramId) {
+      // ✅ В Telegram - сразу показываем задачи
+      console.log('👤 Telegram ID:', telegramId);
       showNavigation(true);
       updateUserUI();
       loadProfile().then(function() {
@@ -1092,9 +1070,9 @@
         console.log('✅ Приложение готово!');
       });
     } else {
-      // ❌ В браузере - показываем экран входа
-      console.log('🌐 Браузерный режим, показываем вход');
-      renderLoginScreen();
+      // ❌ В браузере - показываем уведомление
+      console.log('🌐 Браузерный режим');
+      renderBrowserMode();
     }
   }
 
