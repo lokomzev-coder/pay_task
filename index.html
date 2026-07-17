@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Task & Payment Tracker</title>
+  <title>Task Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@twa-dev/sdk"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
@@ -142,33 +142,12 @@
     .settings-row label { font-size: 14px; font-weight: 600; }
     .settings-row select, .settings-row button { width: auto; margin: 0; }
 
-    /* Уведомление для браузера */
-    .browser-notice { 
-      text-align: center; 
-      padding: 60px 20px; 
-      max-width: 500px; 
-      margin: 20px auto;
-    }
-    .browser-notice .icon-big { width: 80px; height: 80px; stroke: var(--accent); fill: none; stroke-width: 1.5; margin-bottom: 16px; }
-    .browser-notice h2 { margin-bottom: 12px; font-size: 24px; }
-    .browser-notice p { opacity: 0.6; margin-bottom: 20px; font-size: 15px; }
-    .browser-notice .telegram-link { 
-      display: inline-flex; 
-      align-items: center; 
-      gap: 10px; 
-      background: #0088cc; 
-      color: white; 
-      padding: 14px 28px; 
-      border-radius: 12px; 
-      text-decoration: none; 
-      font-weight: 600;
-      font-size: 16px;
-    }
-    .browser-notice .telegram-link:hover { background: #006699; }
-    .browser-notice .telegram-link .icon { stroke: white; width: 22px; height: 22px; }
-    .browser-notice .sub-hint { font-size: 12px; opacity: 0.3; margin-top: 16px; }
+    .auth-loading { text-align: center; padding: 60px 20px; }
+    .auth-loading .spinner { width: 40px; height: 40px; border: 4px solid var(--glass-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .auth-loading p { opacity: 0.6; font-size: 14px; }
 
-    .user-id-display { font-size: 12px; opacity: 0.5; padding: 4px 12px; background: var(--glass-bg); border-radius: 20px; border: 1px solid var(--glass-border); }
+    .user-id-display { font-size: 11px; opacity: 0.4; padding: 2px 10px; background: var(--glass-bg); border-radius: 20px; border: 1px solid var(--glass-border); }
   </style>
 </head>
 <body class="light">
@@ -183,7 +162,7 @@
       <span class="sync-status" id="sync-status">Синхр.</span>
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
-      <span class="user-id-display" id="user-id-display">⏳ вход...</span>
+      <span class="user-id-display" id="user-id-display">⏳</span>
       <div class="user-badge" id="user-badge">
         <span id="user-name">Гость</span>
         <div class="avatar" id="user-avatar">👤</div>
@@ -210,7 +189,10 @@
   </div>
 
   <main id="content" class="full-width">
-    <div class="loading">Загрузка...</div>
+    <div class="auth-loading">
+      <div class="spinner"></div>
+      <p>⏳ Получение данных пользователя...</p>
+    </div>
   </main>
 </div>
 
@@ -302,7 +284,6 @@
   var currentSection = 'tasks';
   var currentLang = 'ru';
   var userData = null;
-  var isInTelegram = false;
 
   // ============================================================
   // 2. ПЕРЕВОДЫ
@@ -331,8 +312,7 @@
       select_file: 'Выберите файл...',
       sync: 'Синхр.', offline: 'Офлайн',
       dark: 'Тёмная', light: 'Светлая',
-      russian: 'Русский', english: 'English',
-      open_in_telegram: 'Откройте это приложение в Telegram для синхронизации данных'
+      russian: 'Русский', english: 'English'
     },
     en: {
       tasks: 'Tasks', payments: 'Payments', settings: 'Settings',
@@ -357,8 +337,7 @@
       select_file: 'Select file...',
       sync: 'Sync', offline: 'Offline',
       dark: 'Dark', light: 'Light',
-      russian: 'Russian', english: 'English',
-      open_in_telegram: 'Open this app in Telegram to sync data'
+      russian: 'Russian', english: 'English'
     }
   };
 
@@ -393,21 +372,21 @@
   }
 
   // ============================================================
-  // 4. ПОЛУЧЕНИЕ ID ИЗ TELEGRAM (АВТОМАТИЧЕСКИ)
+  // 4. ПОЛУЧЕНИЕ ID ИЗ TELEGRAM
   // ============================================================
   function getTelegramId() {
     try {
       // Проверяем наличие Telegram WebApp
       if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
         Telegram.WebApp.ready();
-        isInTelegram = true;
         
+        // Способ 1: из initDataUnsafe
         var initData = Telegram.WebApp.initDataUnsafe;
         if (initData && initData.user) {
           return String(initData.user.id);
         }
         
-        // Пробуем парсить initData строку
+        // Способ 2: парсим initData строку
         var rawData = Telegram.WebApp.initData;
         if (rawData) {
           var params = new URLSearchParams(rawData);
@@ -438,13 +417,13 @@
     var avatarEl = document.getElementById('user-avatar');
     
     if (!telegramId) {
-      idDisplay.textContent = '⏳ ожидание...';
+      idDisplay.textContent = '⏳';
       nameEl.textContent = 'Гость';
       avatarEl.textContent = '👤';
       return;
     }
     
-    idDisplay.textContent = '✅ ID: ' + telegramId;
+    idDisplay.textContent = '🟢';
     
     if (userData && userData.username) {
       nameEl.textContent = userData.username;
@@ -488,33 +467,7 @@
   }
 
   // ============================================================
-  // 6. БРАУЗЕРНЫЙ РЕЖИМ
-  // ============================================================
-  function renderBrowserMode() {
-    showNavigation(false);
-    var content = document.getElementById('content');
-    content.innerHTML = `
-      <div class="browser-notice">
-        <svg class="icon-big" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M22 2L11 13"/>
-          <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
-        </svg>
-        <h2>📱 Откройте в Telegram</h2>
-        <p>${t('open_in_telegram')}</p>
-        <a href="https://t.me/pay_task0_bot" target="_blank" class="telegram-link">
-          <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 2L11 13"/>
-            <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
-          </svg>
-          Открыть в Telegram
-        </a>
-        <div class="sub-hint">🔒 Данные синхронизируются автоматически через Telegram ID</div>
-      </div>
-    `;
-  }
-
-  // ============================================================
-  // 7. ПРОФИЛЬ
+  // 6. ПРОФИЛЬ
   // ============================================================
   async function loadProfile() {
     try {
@@ -541,7 +494,6 @@
       if (!data) {
         console.log('🆕 Создание профиля для ID:', telegramId);
         
-        // Пробуем получить имя из Telegram
         var username = 'Пользователь';
         try {
           if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
@@ -584,7 +536,7 @@
   }
 
   // ============================================================
-  // 8. ЗАГРУЗКА ПАПОК
+  // 7. ЗАГРУЗКА ПАПОК
   // ============================================================
   async function loadFolders() {
     try {
@@ -610,15 +562,9 @@
   }
 
   // ============================================================
-  // 9. ЗАДАЧИ
+  // 8. ЗАДАЧИ
   // ============================================================
   async function renderTasks() {
-    if (!telegramId) {
-      document.getElementById('content').innerHTML = 
-        '<div class="glass-card empty-state">⏳ Ожидание авторизации...</div>';
-      return;
-    }
-    
     var content = document.getElementById('content');
     content.innerHTML = '<div class="loading">' + t('loading') + '</div>';
 
@@ -691,15 +637,9 @@
   }
 
   // ============================================================
-  // 10. ПЛАТЕЖИ
+  // 9. ПЛАТЕЖИ
   // ============================================================
   async function renderPayments() {
-    if (!telegramId) {
-      document.getElementById('content').innerHTML = 
-        '<div class="glass-card empty-state">⏳ Ожидание авторизации...</div>';
-      return;
-    }
-    
     var content = document.getElementById('content');
     content.innerHTML = '<div class="loading">' + t('loading') + '</div>';
 
@@ -770,7 +710,7 @@
   }
 
   // ============================================================
-  // 11. ШАРИНГ
+  // 10. ШАРИНГ
   // ============================================================
   async function shareItem(type, id) {
     try {
@@ -783,7 +723,7 @@
   }
 
   // ============================================================
-  // 12. ЭКСПОРТ/ИМПОРТ
+  // 11. ЭКСПОРТ/ИМПОРТ
   // ============================================================
   function openExportModal() {
     var modal = document.getElementById('export-modal');
@@ -808,7 +748,7 @@
 
   async function exportData(format) {
     try {
-      if (!telegramId) { alert('Ожидание авторизации...'); return; }
+      if (!telegramId) { alert('Нет авторизации'); return; }
       
       var [tasksRes, paymentsRes] = await Promise.all([
         supabaseClient.from('tasks').select('*').eq('telegram_id', telegramId),
@@ -855,7 +795,7 @@
   }
 
   async function importData() {
-    if (!telegramId) { alert('Ожидание авторизации...'); return; }
+    if (!telegramId) { alert('Нет авторизации'); return; }
     
     var fileInput = document.getElementById('import-file');
     var file = fileInput.files[0];
@@ -924,7 +864,7 @@
   }
 
   // ============================================================
-  // 13. НАСТРОЙКИ
+  // 12. НАСТРОЙКИ
   // ============================================================
   function openSettings() {
     var content = document.getElementById('content');
@@ -970,7 +910,7 @@
   }
 
   // ============================================================
-  // 14. ТЕМА
+  // 13. ТЕМА
   // ============================================================
   async function toggleTheme() {
     var isDark = document.body.classList.toggle('dark');
@@ -983,7 +923,7 @@
   }
 
   // ============================================================
-  // 15. ЯЗЫК
+  // 14. ЯЗЫК
   // ============================================================
   async function changeLanguage(lang) {
     currentLang = lang;
@@ -999,10 +939,10 @@
   }
 
   // ============================================================
-  // 16. ФОРМЫ
+  // 15. ФОРМЫ
   // ============================================================
   function openForm(section) {
-    if (!telegramId) { alert('Ожидание авторизации...'); return; }
+    if (!telegramId) { alert('Нет авторизации'); return; }
     currentSection = section;
     document.getElementById('modal-title').textContent = section === 'tasks' ? t('new_task') : t('new_payment');
     document.getElementById('modal-form').classList.toggle('hidden', section !== 'tasks');
@@ -1029,7 +969,7 @@
   function setupForms() {
     document.getElementById('modal-form').onsubmit = async function(e) {
       e.preventDefault();
-      if (!telegramId) { alert('Ожидание авторизации...'); return; }
+      if (!telegramId) { alert('Нет авторизации'); return; }
       
       var title = document.getElementById('item-title').value;
       var folder = document.getElementById('item-folder').value;
@@ -1057,7 +997,7 @@
 
     document.getElementById('modal-form-payment').onsubmit = async function(e) {
       e.preventDefault();
-      if (!telegramId) { alert('Ожидание авторизации...'); return; }
+      if (!telegramId) { alert('Нет авторизации'); return; }
       
       var title = document.getElementById('payment-title').value;
       var dueDate = document.getElementById('payment-due-date').value;
@@ -1082,7 +1022,7 @@
   }
 
   // ============================================================
-  // 17. НАВИГАЦИЯ
+  // 16. НАВИГАЦИЯ
   // ============================================================
   function setupNavigation() {
     document.querySelectorAll('.nav-btn').forEach(function(btn) {
@@ -1102,19 +1042,17 @@
   }
 
   // ============================================================
-  // 18. ИНИЦИАЛИЗАЦИЯ
+  // 17. ИНИЦИАЛИЗАЦИЯ
   // ============================================================
   function init() {
     console.log('🚀 Инициализация...');
     
-    // Сначала пробуем получить ID из Telegram
+    // Получаем ID из Telegram
     var tgId = getTelegramId();
     
     if (tgId) {
-      // ✅ В Telegram - автоматический вход!
       telegramId = tgId;
-      localStorage.setItem('telegram_id', telegramId);
-      console.log('✅ Автоматический вход, ID:', telegramId);
+      console.log('✅ ID получен:', telegramId);
       
       showNavigation(true);
       updateUserUI();
@@ -1127,14 +1065,21 @@
         console.log('✅ Приложение готово!');
       });
     } else {
-      // ❌ Не в Telegram
-      console.log('🌐 Не в Telegram');
-      renderBrowserMode();
+      // Если не в Telegram - показываем ошибку
+      var content = document.getElementById('content');
+      content.innerHTML = `
+        <div class="glass-card" style="text-align:center;padding:40px;">
+          <div style="font-size:48px;margin-bottom:16px;">📱</div>
+          <h2>Откройте в Telegram</h2>
+          <p style="opacity:0.6;margin-top:8px;">Это приложение работает только внутри Telegram</p>
+        </div>
+      `;
+      console.log('❌ Не удалось получить Telegram ID');
     }
   }
 
   // ============================================================
-  // 19. ЗАПУСК
+  // 18. ЗАПУСК
   // ============================================================
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
