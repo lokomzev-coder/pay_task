@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task & Payment Tracker</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/@twa-dev/sdk"></script>
+  <script src="https://unpkg.com/supabase@latest/dist/umd/supabase.min.js"></script>
+  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg-primary: #f0f4f8;
+      --bg-secondary: rgba(255, 255, 255, 0.7);
+      --text-primary: #2a3b4d;
+      --accent: #6c5ce7;
+      --success: #00b894;
+      --warning: #fdcb6e;
+      --danger: #ff7675;
+      --border-radius: 16px;
+      --glass-bg: rgba(255, 255, 255, 0.15);
+      --glass-border: rgba(255, 255, 255, 0.2);
+      --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+      --font-family: 'Nunito', sans-serif;
+    }
+
+    .dark {
+      --bg-primary: #0d1224;
+      --bg-secondary: rgba(30, 30, 46, 0.7);
+      --text-primary: #e0e0ff;
+      --glass-bg: rgba(30, 30, 46, 0.3);
+      --glass-border: rgba(255, 255, 255, 0.1);
+      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: var(--font-family);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    body {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1200px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .glass-card {
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--border-radius);
+      box-shadow: var(--glass-shadow);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .nav-mobile {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      padding: 16px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--glass-border);
+      z-index: 100;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      color: var(--text-primary);
+      font-size: 1rem;
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+
+    .nav-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .task-item, .payment-item {
+      padding: 12px;
+      border-radius: 12px;
+      margin: 8px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-secondary);
+    }
+
+    .deadline-indicator {
+      display: inline-block;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      margin-left: 8px;
+    }
+
+    .green { background: var(--success); }
+    .yellow { background: var(--warning); }
+    .red { background: var(--danger); }
+
+    input, select, button {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      margin: 4px 0;
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      cursor: pointer;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      width: 90%;
+      max-width: 500px;
+      padding: 24px;
+      border-radius: var(--border-radius);
+      background: var(--bg-secondary);
+      box-shadow: var(--glass-shadow);
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (min-width: 768px) {
+      .nav-mobile {
+        display: none;
+      }
+      .desktop-nav {
+        display: flex;
+        flex-direction: column;
+        width: 200px;
+        padding: 20px;
+        position: fixed;
+        height: 100%;
+      }
+      main {
+        margin-left: 220px;
+        padding-top: 20px;
+      }
+    }
+  </style>
+</head>
+<body class="light">
+
+<div class="container">
+  <header>
+    <h1>Tracker</h1>
+    <button id="settings-btn">⚙️</button>
+  </header>
+
+  <div class="desktop-nav hidden">
+    <button class="nav-btn active" data-section="tasks">ЗАДАЧИ</button>
+    <button class="nav-btn" data-section="payments">ПЛАТЕЖИ</button>
+    <button class="nav-btn" data-section="settings">НАСТРОЙКИ</button>
+  </div>
+
+  <main id="content">
+    <!-- Сюда будут подгружаться задачи или платежи -->
+  </main>
+</div>
+
+<!-- Мобильная навигация -->
+<div class="nav-mobile">
+  <button class="nav-btn active" data-section="tasks">ЗАДАЧИ</button>
+  <button class="nav-btn" data-section="payments">ПЛАТЕЖИ</button>
+</div>
+
+<!-- Модальное окно -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <h3 id="modal-title">Новая задача</h3>
+    <form id="modal-form">
+      <input type="text" id="item-title" placeholder="Название" required />
+      <select id="item-folder">
+        <option value="">Без папки</option>
+      </select>
+      <select id="item-priority">
+        <option value="low">Низкий</option>
+        <option value="medium">Средний</option>
+        <option value="high">Высокий</option>
+      </select>
+      <input type="date" id="item-deadline" />
+      <input type="text" id="item-tags" placeholder="Теги (через запятую)" />
+      <button type="submit">Создать</button>
+    </form>
+    <form id="modal-form-payment" class="hidden">
+      <input type="text" id="payment-title" placeholder="Название" required />
+      <input type="date" id="payment-due-date" required />
+      <select id="payment-recurrence">
+        <option value="1m">1 месяц</option>
+        <option value="2m">2 месяца</option>
+        <option value="3m">3 месяца</option>
+        <option value="6m">6 месяцев</option>
+        <option value="1y">1 год</option>
+      </select>
+      <button type="submit">Создать</button>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  const SUPABASE_URL = 'https://lzwbdobhodwdmjzcmdjs.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let telegramId = null;
+  let currentSection = 'tasks';
+  let currentLang = 'ru';
+
+  Telegram.WebApp.ready();
+  const initData = Telegram.WebApp.initDataUnsafe;
+  if (initData && initData.user) {
+    telegramId = BigInt(initData.user.id);
+  } else {
+    alert('Ошибка: не удалось получить Telegram ID');
+  }
+
+  const translations = {
+    ru: {
+      tasks: 'ЗАДАЧИ',
+      payments: 'ПЛАТЕЖИ',
+      settings: 'НАСТРОЙКИ',
+      new_task: 'Новая задача',
+      new_payment: 'Новый платёж',
+      export: 'Экспорт',
+      import: 'Импорт',
+      theme: 'Тема',
+      language: 'Язык',
+      folder: 'Папка',
+      priority: 'Приоритет',
+      deadline: 'Дедлайн',
+      due_date: 'Дата оплаты',
+      recurrence: 'Периодичность',
+      title: 'Название',
+      add: 'Добавить',
+      search: 'Поиск...',
+      share: 'Поделиться',
+      green: 'Зелёный',
+      yellow: 'Жёлтый',
+      red: 'Красный'
+    },
+    en: {
+      tasks: 'TASKS',
+      payments: 'PAYMENTS',
+      settings: 'SETTINGS',
+      new_task: 'New Task',
+      new_payment: 'New Payment',
+      export: 'Export',
+      import: 'Import',
+      theme: 'Theme',
+      language: 'Language',
+      folder: 'Folder',
+      priority: 'Priority',
+      deadline: 'Deadline',
+      due_date: 'Due Date',
+      recurrence: 'Recurrence',
+      title: 'Title',
+      add: 'Add',
+      search: 'Search...',
+      share: 'Share',
+      green: 'Green',
+      yellow: 'Yellow',
+      red: 'Red'
+    }
+  };
+
+  function t(key) {
+    return translations[currentLang][key] || key;
+  }
+
+  async function loadProfile() {
+    const { data } = await supabase.from('profiles').select('*').eq('telegram_id', telegramId).single();
+    if (!data) {
+      await supabase.from('profiles').insert([{ telegram_id: telegramId }]);
+      currentLang = 'ru';
+      document.body.classList.remove('dark');
+    } else {
+      currentLang = data.language;
+      document.body.classList.toggle('dark', data.theme === 'dark');
+    }
+  }
+
+  async function toggleTheme() {
+    const newTheme = document.body.classList.toggle('dark') ? 'dark' : 'light';
+    await supabase.from('profiles').update({ theme: newTheme }).eq('telegram_id', telegramId);
+  }
+
+  async function changeLanguage(lang) {
+    currentLang = lang;
+    await supabase.from('profiles').update({ language: lang }).eq('telegram_id', telegramId);
+    updateUI();
+  }
+
+  function updateUI() {
+    document.querySelector('[data-section="tasks"]').textContent = t('tasks');
+    document.querySelector('[data-section="payments"]').textContent = t('payments');
+    document.querySelector('[data-section="settings"]').textContent = t('settings');
+    document.getElementById('modal-title').textContent = currentSection === 'tasks' ? t('new_task') : t('new_payment');
+    document.getElementById('item-title').placeholder = t('title');
+    document.getElementById('item-folder').previousElementSibling.textContent = t('folder');
+    document.getElementById('item-priority').previousElementSibling.textContent = t('priority');
+    document.getElementById('item-deadline').previousElementSibling.textContent = t('deadline');
+    document.getElementById('item-tags').placeholder = t('tags');
+    document.getElementById('modal-form').lastElementChild.textContent = t('add');
+
+    document.getElementById('payment-title').placeholder = t('title');
+    document.getElementById('payment-due-date').previousElementSibling.textContent = t('due_date');
+    document.getElementById('payment-recurrence').previousElementSibling.textContent = t('recurrence');
+    document.getElementById('modal-form-payment').lastElementChild.textContent = t('add');
+  }
+
+  async function loadFolders() {
+    const { data } = await supabase.from('folders').select('id, name').eq('telegram_id', telegramId);
+    const folderSelect = document.getElementById('item-folder');
+    folderSelect.innerHTML = `<option value="">${t('folder')}</option>`;
+    data.forEach(folder => {
+      const option = document.createElement('option');
+      option.value = folder.id;
+      option.textContent = folder.name;
+      folderSelect.appendChild(option);
+    });
+  }
+
+  async function loadTasks() {
+    const { data } = await supabase.from('tasks').select('*').eq('telegram_id', telegramId);
+    const content = document.getElementById('content');
+    content.innerHTML = `<div><input type="text" id="search-tasks" placeholder="${t('search')}" /></div>`;
+    const searchInput = document.getElementById('search-tasks');
+    searchInput.oninput = () => {
+      const filter = searchInput.value.toLowerCase();
+      document.querySelectorAll('.task-item').forEach(el => {
+        el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
+      });
+    };
+    data.forEach(task => {
+      const dueDate = task.deadline ? new Date(task.deadline) : null;
+      let statusClass = '';
+      if (dueDate) {
+        const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
+        if (diff < 1) statusClass = 'red';
+        else if (diff < 3) statusClass = 'yellow';
+        else statusClass = 'green';
+      }
+      content.innerHTML += `
+        <div class="task-item glass-card">
+          <span>${task.title}</span>
+          <div>
+            <span class="deadline-indicator ${statusClass}"></span>
+            <button onclick="shareItem('task', '${task.id}')">${t('share')}</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  async function loadPayments() {
+    const { data } = await supabase.from('payments').select('*').eq('telegram_id', telegramId);
+    const content = document.getElementById('content');
+    content.innerHTML = `<div><input type="text" id="search-payments" placeholder="${t('search')}" /></div>`;
+    const searchInput = document.getElementById('search-payments');
+    searchInput.oninput = () => {
+      const filter = searchInput.value.toLowerCase();
+      document.querySelectorAll('.payment-item').forEach(el => {
+        el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
+      });
+    };
+    data.forEach(payment => {
+      const dueDate = payment.due_date ? new Date(payment.due_date) : null;
+      let statusClass = '';
+      if (dueDate) {
+        const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
+        if (diff < 2) statusClass = 'red';
+        else if (diff < 7) statusClass = 'yellow';
+        else statusClass = 'green';
+      }
+      content.innerHTML += `
+        <div class="payment-item glass-card">
+          <span>${payment.title}</span>
+          <div>
+            <span class="deadline-indicator ${statusClass}"></span>
+            <button onclick="shareItem('payment', '${payment.id}')">${t('share')}</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  async function shareItem(type, id) {
+    try {
+      const link = `${window.location.origin}/shared?resource=${type}&id=${id}`;
+      navigator.clipboard.writeText(link);
+      alert('Ссылка скопирована в буфер обмена!');
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      alert('Не удалось скопировать ссылку');
+    }
+  }
+
+  async function exportData() {
+    const [tasksRes, paymentsRes] = await Promise.all([
+      supabase.from('tasks').select('*').eq('telegram_id', telegramId),
+      supabase.from('payments').select('*').eq('telegram_id', telegramId)
+    ]);
+
+    const wb = XLSX.utils.book_new();
+    if (tasksRes.data.length > 0) {
+      const wsTasks = XLSX.utils.json_to_sheet(tasksRes.data);
+      XLSX.utils.book_append_sheet(wb, wsTasks, "Tasks");
+    }
+    if (paymentsRes.data.length > 0) {
+      const wsPayments = XLSX.utils.json_to_sheet(paymentsRes.data);
+      XLSX.utils.book_append_sheet(wb, wsPayments, "Payments");
+    }
+
+    XLSX.writeFile(wb, `tracker_data_${Date.now()}.xlsx`);
+  }
+
+  function importData() {
+    alert('Функция импорта в разработке. Пожалуйста, используйте экспорт.');
+  }
+
+  function openSettings() {
+    const content = document.getElementById('content');
+    content.innerHTML = `
+      <div class="glass-card">
+        <h3>${t('settings')}</h3>
+        <p><label>${t('theme')}:</label> <button onclick="toggleTheme()">Toggle</button></p>
+        <p><label>${t('language')}:</label>
+          <select onchange="changeLanguage(this.value)">
+            <option value="ru" ${currentLang === 'ru' ? 'selected' : ''}>RU</option>
+            <option value="en" ${currentLang === 'en' ? 'selected' : ''}>EN</option>
+          </select>
+        </p>
+        <p><button onclick="exportData()">${t('export')}</button></p>
+        <p><button onclick="importData()">${t('import')}</button></p>
+      </div>
+    `;
+  }
+
+  function openForm(section) {
+    currentSection = section;
+    document.getElementById('modal-title').textContent = section === 'tasks' ? t('new_task') : t('new_payment');
+    document.getElementById('modal-form').classList.toggle('hidden', section !== 'tasks');
+    document.getElementById('modal-form-payment').classList.toggle('hidden', section !== 'payments');
+    document.getElementById('modal').style.display = 'flex';
+    if (section === 'tasks') loadFolders();
+  }
+
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      currentSection = e.target.dataset.section;
+      if (currentSection === 'tasks') loadTasks();
+      else if (currentSection === 'payments') loadPayments();
+      else if (currentSection === 'settings') openSettings();
+    });
+  });
+
+  document.addEventListener('click', e => {
+    if (e.target.id === 'add-task-btn' || e.target.id === 'add-payment-btn') {
+      openForm(e.target.id.includes('task') ? 'tasks' : 'payments');
+    }
+  });
+
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target.id === 'modal') document.getElementById('modal').style.display = 'none';
+  });
+
+  document.getElementById('modal-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('item-title').value;
+    const folder = document.getElementById('item-folder').value;
+    const priority = document.getElementById('item-priority').value;
+    const deadline = document.getElementById('item-deadline').value;
+    const tags = document.getElementById('item-tags').value.split(',').map(tag => tag.trim()).filter(Boolean);
+
+    await supabase.from('tasks').insert([{
+      telegram_id: telegramId,
+      title,
+      folder_id: folder || null,
+      priority,
+      tags,
+      deadline: deadline || null
+    }]);
+    loadTasks();
+    document.getElementById('modal').style.display = 'none';
+    document.getElementById('modal-form').reset();
+  });
+
+  document.getElementById('modal-form-payment').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = document.getElementById('payment-title').value;
+    const dueDate = document.getElementById('payment-due-date').value;
+    const recurrence = document.getElementById('payment-recurrence').value;
+
+    await supabase.from('payments').insert([{
+      telegram_id: telegramId,
+      title,
+      due_date: dueDate,
+      recurrence
+    }]);
+    loadPayments();
+    document.getElementById('modal').style.display = 'none';
+    document.getElementById('modal-form-payment').reset();
+  });
+
+  document.getElementById('settings-btn').addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector('.nav-btn[data-section="settings"]').classList.add('active');
+    currentSection = 'settings';
+    openSettings();
+  });
+
+  loadProfile().then(() => {
+    loadTasks();
+    if (window.innerWidth >= 768) {
+      document.querySelector('.desktop-nav').classList.remove('hidden');
+      document.querySelector('.nav-mobile').classList.add('hidden');
+    }
+  });
+</script>
+</body>
+</html>
