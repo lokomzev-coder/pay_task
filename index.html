@@ -142,30 +142,43 @@
     .settings-row label { font-size: 14px; font-weight: 600; }
     .settings-row select, .settings-row button { width: auto; margin: 0; }
 
-    .browser-notice { 
-      text-align: center; 
-      padding: 40px 20px; 
-      max-width: 500px; 
-      margin: 40px auto;
+    /* ID вход */
+    .login-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      background: var(--glass-bg);
+      border-radius: 10px;
+      border: 1px solid var(--glass-border);
+      margin-bottom: 12px;
     }
-    .browser-notice .icon-big { width: 80px; height: 80px; stroke: var(--accent); fill: none; stroke-width: 1.5; margin-bottom: 16px; }
-    .browser-notice h2 { margin-bottom: 12px; }
-    .browser-notice p { opacity: 0.6; margin-bottom: 20px; }
-    .browser-notice .telegram-link { 
-      display: inline-flex; 
-      align-items: center; 
-      gap: 10px; 
-      background: #0088cc; 
-      color: white; 
-      padding: 12px 24px; 
-      border-radius: 12px; 
-      text-decoration: none; 
-      font-weight: 600;
+    .login-bar input {
+      flex: 1;
+      padding: 6px 12px;
+      font-size: 13px;
+      margin: 0;
+      min-width: 100px;
     }
-    .browser-notice .telegram-link:hover { background: #006699; }
-    .browser-notice .telegram-link .icon { stroke: white; width: 22px; height: 22px; }
-
-    .debug-info { font-size: 11px; opacity: 0.3; padding: 8px; background: var(--glass-bg); border-radius: 8px; margin-top: 12px; word-break: break-all; }
+    .login-bar button {
+      padding: 6px 16px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .login-bar .user-id-display {
+      font-size: 12px;
+      opacity: 0.5;
+      padding: 4px 12px;
+      background: var(--glass-bg);
+      border-radius: 20px;
+      border: 1px solid var(--glass-border);
+    }
+    .login-hint {
+      font-size: 11px;
+      opacity: 0.4;
+      text-align: center;
+      padding: 4px;
+    }
   </style>
 </head>
 <body class="light">
@@ -189,6 +202,14 @@
       </button>
     </div>
   </header>
+
+  <!-- Панель входа по ID -->
+  <div class="login-bar" id="login-bar">
+    <span style="font-size:12px;opacity:0.6;">👤 ID:</span>
+    <input type="text" id="user-id-input" placeholder="Введите ваш ID..." value="">
+    <button id="login-btn">Войти</button>
+    <span class="user-id-display" id="user-id-display">не авторизован</span>
+  </div>
 
   <div class="desktop-nav" id="desktop-nav">
     <button class="nav-btn active" data-section="tasks" title="Задачи">
@@ -293,15 +314,11 @@
   var SUPABASE_URL = 'https://lzwbdobhodwdmjzcmdjs.supabase.co';
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw';
   
-  var BOT_USERNAME = "pay_task0_bot";
-  
   var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   var telegramId = null;
   var currentSection = 'tasks';
   var currentLang = 'ru';
   var userData = null;
-  var isInTelegram = false;
-  var authChecked = false;
 
   // ============================================================
   // 2. ПЕРЕВОДЫ
@@ -330,8 +347,7 @@
       select_file: 'Выберите файл...',
       sync: 'Синхр.', offline: 'Офлайн',
       dark: 'Тёмная', light: 'Светлая',
-      russian: 'Русский', english: 'English',
-      open_in_telegram: 'Откройте в Telegram для синхронизации'
+      russian: 'Русский', english: 'English'
     },
     en: {
       tasks: 'Tasks', payments: 'Payments', settings: 'Settings',
@@ -356,8 +372,7 @@
       select_file: 'Select file...',
       sync: 'Sync', offline: 'Offline',
       dark: 'Dark', light: 'Light',
-      russian: 'Russian', english: 'English',
-      open_in_telegram: 'Open in Telegram for sync'
+      russian: 'Russian', english: 'English'
     }
   };
 
@@ -392,128 +407,35 @@
   }
 
   // ============================================================
-  // 4. ПОЛУЧЕНИЕ TELEGRAM ID (ИСПРАВЛЕННАЯ ВЕРСИЯ)
+  // 4. ПОЛУЧЕНИЕ ID
   // ============================================================
   function getTelegramId() {
     try {
-      console.log('🔍 Проверка Telegram WebApp...');
-      
-      // Проверяем наличие Telegram WebApp
-      if (typeof window.Telegram === 'undefined') {
-        console.log('❌ Telegram не найден');
-        isInTelegram = false;
-        return false;
-      }
-      
-      if (!window.Telegram.WebApp) {
-        console.log('❌ Telegram.WebApp не найден');
-        isInTelegram = false;
-        return false;
-      }
-      
-      // Инициализируем WebApp
-      window.Telegram.WebApp.ready();
-      console.log('✅ Telegram.WebApp.ready() вызван');
-      
-      // Получаем данные
-      var initData = window.Telegram.WebApp.initData;
-      var initDataUnsafe = window.Telegram.WebApp.initDataUnsafe;
-      
-      console.log('📦 initData:', initData ? 'есть' : 'нет');
-      console.log('📦 initDataUnsafe:', initDataUnsafe ? 'есть' : 'нет');
-      
-      // Пытаемся получить пользователя
-      var user = null;
-      
-      // Способ 1: из initDataUnsafe
-      if (initDataUnsafe && initDataUnsafe.user) {
-        user = initDataUnsafe.user;
-        console.log('👤 Пользователь из initDataUnsafe:', user);
-      }
-      
-      // Способ 2: парсим initData (если user не найден)
-      if (!user && initData) {
-        try {
-          var params = new URLSearchParams(initData);
+      if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+        Telegram.WebApp.ready();
+        var initData = Telegram.WebApp.initDataUnsafe;
+        if (initData && initData.user) {
+          return String(initData.user.id);
+        }
+        // Пробуем парсить initData
+        var rawData = Telegram.WebApp.initData;
+        if (rawData) {
+          var params = new URLSearchParams(rawData);
           var userStr = params.get('user');
           if (userStr) {
-            user = JSON.parse(decodeURIComponent(userStr));
-            console.log('👤 Пользователь из initData:', user);
+            try {
+              var user = JSON.parse(decodeURIComponent(userStr));
+              if (user && user.id) {
+                return String(user.id);
+              }
+            } catch (e) {}
           }
-        } catch (e) {
-          console.log('❌ Ошибка парсинга initData:', e);
         }
       }
-      
-      // Если пользователь найден
-      if (user && user.id) {
-        isInTelegram = true;
-        telegramId = String(user.id);
-        userData = {
-          id: String(user.id),
-          username: user.username || user.first_name || 'Пользователь',
-          firstName: user.first_name || '',
-          lastName: user.last_name || '',
-          photoUrl: user.photo_url || null
-        };
-        console.log('✅ Telegram ID получен:', telegramId, 'Пользователь:', userData.username);
-        return true;
-      }
-      
-      // Проверяем, есть ли хост в Telegram (определяем по User-Agent)
-      var isTelegramWebView = navigator.userAgent.includes('Telegram') || 
-                              navigator.userAgent.includes('TelegramBot') ||
-                              window.location.href.includes('tgWebApp');
-      
-      if (isTelegramWebView) {
-        console.log('⚠️ Похоже на Telegram, но пользователь не найден. Пробуем ещё раз...');
-        // Пробуем получить через setTimeout (может данные ещё не загрузились)
-        setTimeout(function() {
-          retryGetTelegramId();
-        }, 500);
-        return false;
-      }
-      
-      console.log('🌐 Не в Telegram (браузер)');
-      isInTelegram = false;
-      return false;
-      
+      return null;
     } catch (e) {
-      console.error('❌ Ошибка получения Telegram ID:', e);
-      isInTelegram = false;
-      return false;
-    }
-  }
-
-  // Повторная попытка получения ID
-  function retryGetTelegramId() {
-    console.log('🔄 Повторная попытка получения Telegram ID...');
-    try {
-      if (window.Telegram && window.Telegram.WebApp) {
-        var initDataUnsafe = window.Telegram.WebApp.initDataUnsafe;
-        if (initDataUnsafe && initDataUnsafe.user) {
-          var user = initDataUnsafe.user;
-          telegramId = String(user.id);
-          userData = {
-            id: String(user.id),
-            username: user.username || user.first_name || 'Пользователь',
-            firstName: user.first_name || '',
-            lastName: user.last_name || '',
-            photoUrl: user.photo_url || null
-          };
-          isInTelegram = true;
-          console.log('✅ Telegram ID получен (повторно):', telegramId);
-          
-          // Загружаем данные
-          loadApp();
-          return;
-        }
-      }
-      console.log('❌ Повторная попытка не удалась');
-      renderBrowserMode();
-    } catch (e) {
-      console.error('❌ Ошибка повторной попытки:', e);
-      renderBrowserMode();
+      console.log('Ошибка получения Telegram ID:', e);
+      return null;
     }
   }
 
@@ -521,17 +443,25 @@
   // 5. UI ФУНКЦИИ
   // ============================================================
   function updateUserUI() {
-    if (!userData) return;
+    if (!telegramId) {
+      document.getElementById('user-name').textContent = 'Гость';
+      document.getElementById('user-avatar').textContent = '👤';
+      document.getElementById('user-id-display').textContent = 'не авторизован';
+      return;
+    }
+    document.getElementById('user-id-display').textContent = 'ID: ' + telegramId;
+    document.getElementById('user-id-input').value = telegramId;
+    
     var nameEl = document.getElementById('user-name');
     var avatarEl = document.getElementById('user-avatar');
-    if (nameEl) nameEl.textContent = userData.username || 'Пользователь';
-    if (avatarEl) {
-      if (userData.photoUrl) {
-        avatarEl.innerHTML = '<img src="' + userData.photoUrl + '" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">';
-      } else {
-        var letter = (userData.firstName || 'П')[0].toUpperCase();
-        avatarEl.textContent = letter;
-      }
+    
+    if (userData && userData.username) {
+      nameEl.textContent = userData.username;
+      var letter = userData.username[0].toUpperCase();
+      avatarEl.textContent = letter;
+    } else {
+      nameEl.textContent = 'Пользователь';
+      avatarEl.textContent = '👤';
     }
   }
 
@@ -567,47 +497,12 @@
   }
 
   // ============================================================
-  // 6. БРАУЗЕРНЫЙ РЕЖИМ
-  // ============================================================
-  function renderBrowserMode() {
-    showNavigation(false);
-    var content = document.getElementById('content');
-    content.innerHTML = `
-      <div class="browser-notice">
-        <svg class="icon-big" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M22 2L11 13"/>
-          <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
-        </svg>
-        <h2>📱 Откройте в Telegram</h2>
-        <p>${t('open_in_telegram')}</p>
-        <a href="https://t.me/${BOT_USERNAME}" target="_blank" class="telegram-link">
-          <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 2L11 13"/>
-            <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
-          </svg>
-          @${BOT_USERNAME}
-        </a>
-        <div style="margin-top:20px;font-size:12px;opacity:0.3;">
-          🔒 Данные синхронизируются через Telegram ID
-        </div>
-        <div class="debug-info" id="debug-info"></div>
-      </div>
-    `;
-    
-    // Показываем отладочную информацию
-    var debugEl = document.getElementById('debug-info');
-    if (debugEl) {
-      debugEl.textContent = 'User-Agent: ' + navigator.userAgent;
-    }
-  }
-
-  // ============================================================
-  // 7. ПРОФИЛЬ
+  // 6. ПРОФИЛЬ
   // ============================================================
   async function loadProfile() {
     try {
       if (!telegramId) {
-        console.error('❌ Нет Telegram ID');
+        console.error('❌ Нет ID');
         return;
       }
       
@@ -632,7 +527,7 @@
           .from('profiles')
           .insert([{ 
             telegram_id: telegramId, 
-            username: userData?.username || 'Пользователь',
+            username: 'Пользователь',
             language: 'ru',
             theme: 'light'
           }]);
@@ -649,6 +544,8 @@
       currentLang = data.language || 'ru';
       if (data.theme === 'dark') document.body.classList.add('dark');
       else document.body.classList.remove('dark');
+      
+      userData = data;
       console.log('✅ Профиль загружен, язык:', currentLang);
       setSyncStatus('ok');
     } catch (err) {
@@ -658,10 +555,11 @@
   }
 
   // ============================================================
-  // 8. ЗАГРУЗКА ПАПОК
+  // 7. ЗАГРУЗКА ПАПОК
   // ============================================================
   async function loadFolders() {
     try {
+      if (!telegramId) return;
       var { data, error } = await supabaseClient
         .from('folders')
         .select('id, name')
@@ -683,9 +581,15 @@
   }
 
   // ============================================================
-  // 9. ЗАДАЧИ
+  // 8. ЗАДАЧИ
   // ============================================================
   async function renderTasks() {
+    if (!telegramId) {
+      document.getElementById('content').innerHTML = 
+        '<div class="glass-card empty-state">⚠️ Введите ID для доступа к задачам</div>';
+      return;
+    }
+    
     var content = document.getElementById('content');
     content.innerHTML = '<div class="loading">' + t('loading') + '</div>';
 
@@ -758,9 +662,15 @@
   }
 
   // ============================================================
-  // 10. ПЛАТЕЖИ
+  // 9. ПЛАТЕЖИ
   // ============================================================
   async function renderPayments() {
+    if (!telegramId) {
+      document.getElementById('content').innerHTML = 
+        '<div class="glass-card empty-state">⚠️ Введите ID для доступа к платежам</div>';
+      return;
+    }
+    
     var content = document.getElementById('content');
     content.innerHTML = '<div class="loading">' + t('loading') + '</div>';
 
@@ -831,7 +741,7 @@
   }
 
   // ============================================================
-  // 11. ШАРИНГ
+  // 10. ШАРИНГ
   // ============================================================
   async function shareItem(type, id) {
     try {
@@ -844,7 +754,7 @@
   }
 
   // ============================================================
-  // 12. ЭКСПОРТ/ИМПОРТ
+  // 11. ЭКСПОРТ/ИМПОРТ
   // ============================================================
   function openExportModal() {
     var modal = document.getElementById('export-modal');
@@ -869,6 +779,8 @@
 
   async function exportData(format) {
     try {
+      if (!telegramId) { alert('Сначала войдите по ID'); return; }
+      
       var [tasksRes, paymentsRes] = await Promise.all([
         supabaseClient.from('tasks').select('*').eq('telegram_id', telegramId),
         supabaseClient.from('payments').select('*').eq('telegram_id', telegramId)
@@ -914,6 +826,8 @@
   }
 
   async function importData() {
+    if (!telegramId) { alert('Сначала войдите по ID'); return; }
+    
     var fileInput = document.getElementById('import-file');
     var file = fileInput.files[0];
     if (!file) {
@@ -981,7 +895,7 @@
   }
 
   // ============================================================
-  // 13. НАСТРОЙКИ
+  // 12. НАСТРОЙКИ
   // ============================================================
   function openSettings() {
     var content = document.getElementById('content');
@@ -1017,7 +931,7 @@
           '</button>' +
         '</div>' +
         
-        '<div style="font-size:11px;opacity:0.4;margin-top:16px;">👤 ID: ' + telegramId + '</div>' +
+        '<div style="font-size:11px;opacity:0.4;margin-top:16px;">👤 ID: ' + (telegramId || 'не авторизован') + '</div>' +
       '</div>';
 
     document.getElementById('theme-toggle').onclick = toggleTheme;
@@ -1027,24 +941,28 @@
   }
 
   // ============================================================
-  // 14. ТЕМА
+  // 13. ТЕМА
   // ============================================================
   async function toggleTheme() {
     var isDark = document.body.classList.toggle('dark');
-    try {
-      await supabaseClient.from('profiles').update({ theme: isDark ? 'dark' : 'light' }).eq('telegram_id', telegramId);
-    } catch (err) {}
+    if (telegramId) {
+      try {
+        await supabaseClient.from('profiles').update({ theme: isDark ? 'dark' : 'light' }).eq('telegram_id', telegramId);
+      } catch (err) {}
+    }
     openSettings();
   }
 
   // ============================================================
-  // 15. ЯЗЫК
+  // 14. ЯЗЫК
   // ============================================================
   async function changeLanguage(lang) {
     currentLang = lang;
-    try {
-      await supabaseClient.from('profiles').update({ language: lang }).eq('telegram_id', telegramId);
-    } catch (err) {}
+    if (telegramId) {
+      try {
+        await supabaseClient.from('profiles').update({ language: lang }).eq('telegram_id', telegramId);
+      } catch (err) {}
+    }
     updateUI();
     if (currentSection === 'tasks') renderTasks();
     else if (currentSection === 'payments') renderPayments();
@@ -1052,9 +970,10 @@
   }
 
   // ============================================================
-  // 16. ФОРМЫ
+  // 15. ФОРМЫ
   // ============================================================
   function openForm(section) {
+    if (!telegramId) { alert('Сначала войдите по ID'); return; }
     currentSection = section;
     document.getElementById('modal-title').textContent = section === 'tasks' ? t('new_task') : t('new_payment');
     document.getElementById('modal-form').classList.toggle('hidden', section !== 'tasks');
@@ -1081,6 +1000,8 @@
   function setupForms() {
     document.getElementById('modal-form').onsubmit = async function(e) {
       e.preventDefault();
+      if (!telegramId) { alert('Сначала войдите по ID'); return; }
+      
       var title = document.getElementById('item-title').value;
       var folder = document.getElementById('item-folder').value;
       var priority = document.getElementById('item-priority').value;
@@ -1107,6 +1028,8 @@
 
     document.getElementById('modal-form-payment').onsubmit = async function(e) {
       e.preventDefault();
+      if (!telegramId) { alert('Сначала войдите по ID'); return; }
+      
       var title = document.getElementById('payment-title').value;
       var dueDate = document.getElementById('payment-due-date').value;
       var recurrence = document.getElementById('payment-recurrence').value;
@@ -1130,6 +1053,24 @@
   }
 
   // ============================================================
+  // 16. ВХОД ПО ID
+  // ============================================================
+  function loginById(id) {
+    if (!id || id.trim() === '') {
+      alert('Введите ID');
+      return;
+    }
+    telegramId = id.trim();
+    localStorage.setItem('telegram_id', telegramId);
+    updateUserUI();
+    loadProfile().then(function() {
+      showNavigation(true);
+      if (currentSection === 'tasks') renderTasks();
+      else if (currentSection === 'payments') renderPayments();
+    });
+  }
+
+  // ============================================================
   // 17. НАВИГАЦИЯ
   // ============================================================
   function setupNavigation() {
@@ -1137,6 +1078,17 @@
       btn.onclick = function() { navigateTo(this.dataset.section); };
     });
     document.getElementById('settings-btn').onclick = function() { navigateTo('settings'); };
+    
+    document.getElementById('login-btn').onclick = function() {
+      var id = document.getElementById('user-id-input').value;
+      loginById(id);
+    };
+    
+    document.getElementById('user-id-input').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        loginById(this.value);
+      }
+    });
   }
 
   function navigateTo(section) {
@@ -1150,62 +1102,52 @@
   }
 
   // ============================================================
-  // 18. ЗАГРУЗКА ПРИЛОЖЕНИЯ
+  // 18. ИНИЦИАЛИЗАЦИЯ
   // ============================================================
-  function loadApp() {
-    if (!telegramId) {
-      renderBrowserMode();
-      return;
+  function init() {
+    console.log('🚀 Инициализация...');
+    
+    // Пробуем получить ID из Telegram
+    var tgId = getTelegramId();
+    if (tgId) {
+      telegramId = tgId;
+      localStorage.setItem('telegram_id', telegramId);
+      console.log('✅ ID из Telegram:', telegramId);
+    } else {
+      // Пробуем из localStorage
+      var savedId = localStorage.getItem('telegram_id');
+      if (savedId) {
+        telegramId = savedId;
+        console.log('📁 ID из localStorage:', telegramId);
+      }
     }
     
-    console.log('👤 Загрузка приложения для ID:', telegramId);
+    // Показываем навигацию
     showNavigation(true);
     updateUserUI();
-    loadProfile().then(function() {
+    
+    // Загружаем данные
+    if (telegramId) {
+      loadProfile().then(function() {
+        updateUI();
+        setupNavigation();
+        setupModal();
+        setupForms();
+        renderTasks();
+        console.log('✅ Приложение готово!');
+      });
+    } else {
       updateUI();
       setupNavigation();
       setupModal();
       setupForms();
       renderTasks();
-      console.log('✅ Приложение готово!');
-    });
-  }
-
-  // ============================================================
-  // 19. ИНИЦИАЛИЗАЦИЯ
-  // ============================================================
-  function init() {
-    console.log('🚀 Инициализация...');
-    console.log('📍 URL:', window.location.href);
-    console.log('📍 User-Agent:', navigator.userAgent);
-    
-    // Пробуем получить Telegram ID
-    var hasId = getTelegramId();
-    
-    if (hasId && telegramId) {
-      loadApp();
-    } else {
-      // Проверяем, может быть это Telegram но ID ещё не загрузился
-      var isTelegramWebView = navigator.userAgent.includes('Telegram') || 
-                              navigator.userAgent.includes('TelegramBot') ||
-                              window.location.href.includes('tgWebApp');
-      
-      if (isTelegramWebView) {
-        console.log('⏳ Похоже на Telegram, ждём загрузку данных...');
-        // Даём время на загрузку
-        setTimeout(function() {
-          if (!telegramId) {
-            retryGetTelegramId();
-          }
-        }, 1000);
-      } else {
-        renderBrowserMode();
-      }
+      console.log('ℹ️ Ожидание ввода ID');
     }
   }
 
   // ============================================================
-  // 20. ЗАПУСК
+  // 19. ЗАПУСК
   // ============================================================
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
