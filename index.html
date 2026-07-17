@@ -42,14 +42,12 @@
     header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
     header .icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; }
     
-    /* Мобильная навигация */
     .nav-mobile { position: fixed; bottom: 0; left: 0; right: 0; display: none; justify-content: space-around; padding: 12px; background: var(--glass-bg); backdrop-filter: blur(12px); border-top: 1px solid var(--glass-border); z-index: 100; }
     .nav-btn { background: none; border: none; color: var(--text-primary); font-size: 0.65rem; cursor: pointer; padding: 4px 8px; border-radius: 8px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 2px; opacity: 0.6; }
     .nav-btn .icon { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
     .nav-btn.active { opacity: 1; color: var(--accent); }
     .nav-btn.active .icon { stroke: var(--accent); }
     
-    /* Десктоп навигация - компактная, прозрачная */
     .desktop-nav { 
       display: none; 
       flex-direction: column; 
@@ -113,7 +111,6 @@
     button .icon { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; }
     button.secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--glass-border); }
     button.secondary .icon { stroke: var(--text-primary); }
-    button.danger { background: var(--danger); }
     
     .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 200; justify-content: center; align-items: center; }
     .modal-content { width: 90%; max-width: 460px; padding: 24px; border-radius: var(--border-radius); background: var(--bg-secondary); box-shadow: var(--glass-shadow); backdrop-filter: blur(12px); max-height: 90vh; overflow-y: auto; border: 1px solid var(--glass-border); }
@@ -131,7 +128,6 @@
     .sync-status.offline { background: var(--danger); }
     .sync-status.loading { background: var(--warning); color: #333; }
     
-    /* Экран входа */
     .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 16px; }
     .login-screen h2 { font-size: 24px; }
     .login-screen p { opacity: 0.6; max-width: 360px; font-size: 14px; }
@@ -152,6 +148,10 @@
     .settings-row:last-child { border-bottom: none; }
     .settings-row label { font-size: 14px; font-weight: 600; }
     .settings-row select, .settings-row button { width: auto; margin: 0; }
+    
+    .bot-login-hint { font-size: 12px; opacity: 0.5; margin-top: 12px; padding: 12px; background: var(--glass-bg); border-radius: 8px; border: 1px dashed var(--glass-border); }
+    .bot-login-hint a { color: var(--accent); text-decoration: none; }
+    .bot-login-hint a:hover { text-decoration: underline; }
   </style>
 </head>
 <body class="light">
@@ -176,7 +176,6 @@
     </div>
   </header>
 
-  <!-- Десктоп навигация - компактная, слева по центру -->
   <div class="desktop-nav" id="desktop-nav">
     <button class="nav-btn active" data-section="tasks" title="Задачи">
       <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -197,7 +196,6 @@
   </main>
 </div>
 
-<!-- Мобильная навигация -->
 <div class="nav-mobile" id="nav-mobile">
   <button class="nav-btn active" data-section="tasks">
     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -209,7 +207,6 @@
   </button>
 </div>
 
-<!-- Модальное окно для задач/платежей -->
 <div class="modal" id="modal">
   <div class="modal-content">
     <h3 id="modal-title" style="margin-bottom:12px;">Новая задача</h3>
@@ -246,7 +243,6 @@
   </div>
 </div>
 
-<!-- Модальное окно для экспорта/импорта -->
 <div class="modal" id="export-modal">
   <div class="modal-content">
     <h3 id="export-title" style="margin-bottom:12px;">Экспорт данных</h3>
@@ -311,9 +307,6 @@
       settings_title: 'Настройки', theme: 'Тема', language: 'Язык',
       export: 'Экспорт', import: 'Импорт',
       export_title: 'Экспорт данных', import_title: 'Импорт данных',
-      export_desc: 'Выберите формат для экспорта данных',
-      import_desc: 'Выберите файл для импорта (JSON или Excel)',
-      format_json: 'JSON', format_excel: 'Excel',
       export_success: 'Экспорт выполнен успешно!',
       import_success: 'Импорт выполнен успешно!',
       import_error: 'Ошибка импорта. Проверьте формат файла.',
@@ -324,7 +317,9 @@
       welcome: 'Добро пожаловать!', guest: 'Гость',
       sync: 'Синхр.', offline: 'Офлайн',
       dark: 'Тёмная', light: 'Светлая',
-      russian: 'Русский', english: 'English'
+      russian: 'Русский', english: 'English',
+      open_in_telegram: 'Откройте приложение в Telegram для авторизации',
+      bot_login: 'Или используйте бота:'
     },
     en: {
       tasks: 'Tasks', payments: 'Payments', settings: 'Settings',
@@ -343,9 +338,6 @@
       settings_title: 'Settings', theme: 'Theme', language: 'Language',
       export: 'Export', import: 'Import',
       export_title: 'Export Data', import_title: 'Import Data',
-      export_desc: 'Select format to export data',
-      import_desc: 'Select file to import (JSON or Excel)',
-      format_json: 'JSON', format_excel: 'Excel',
       export_success: 'Export successful!',
       import_success: 'Import successful!',
       import_error: 'Import error. Check file format.',
@@ -356,7 +348,9 @@
       welcome: 'Welcome!', guest: 'Guest',
       sync: 'Sync', offline: 'Offline',
       dark: 'Dark', light: 'Light',
-      russian: 'Russian', english: 'English'
+      russian: 'Russian', english: 'English',
+      open_in_telegram: 'Open the app in Telegram to login',
+      bot_login: 'Or use the bot:'
     }
   };
 
@@ -391,37 +385,53 @@
   }
 
   // ============================================================
-  // 4. АВТОРИЗАЦИЯ ЧЕРЕЗ TELEGRAM (БЕЗ ТЕСТОВОГО РЕЖИМА)
+  // 4. АВТОРИЗАЦИЯ ЧЕРЕЗ TELEGRAM
   // ============================================================
   function initTelegram() {
     try {
-      // Проверяем, запущено ли в Telegram
-      if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
-        console.warn('⚠️ Приложение запущено не в Telegram');
-        isAuthorized = false;
-        return false;
+      // Проверяем наличие Telegram WebApp
+      if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+        Telegram.WebApp.ready();
+        var user = Telegram.WebApp.initDataUnsafe?.user;
+        
+        if (user) {
+          telegramId = String(user.id);
+          userData = {
+            id: String(user.id),
+            username: user.username || user.first_name || 'Пользователь',
+            firstName: user.first_name || '',
+            lastName: user.last_name || '',
+            photoUrl: user.photo_url || null
+          };
+          isAuthorized = true;
+          console.log('✅ Авторизован в Telegram:', userData.username, 'ID:', telegramId);
+          return true;
+        } else {
+          console.warn('⚠️ Telegram WebApp есть, но пользователь не авторизован');
+          isAuthorized = false;
+          return false;
+        }
       }
       
-      Telegram.WebApp.ready();
-      var user = Telegram.WebApp.initDataUnsafe?.user;
-      
-      if (!user) {
-        console.warn('⚠️ Пользователь не авторизован в Telegram');
-        isAuthorized = false;
-        return false;
+      // Если не в Telegram - пробуем получить ID из URL (для бота)
+      var urlParams = new URLSearchParams(window.location.search);
+      var botUserId = urlParams.get('user_id');
+      if (botUserId) {
+        telegramId = botUserId;
+        userData = {
+          id: botUserId,
+          username: 'Пользователь бота',
+          firstName: 'Бот',
+          lastName: ''
+        };
+        isAuthorized = true;
+        console.log('✅ Авторизован через бота, ID:', telegramId);
+        return true;
       }
       
-      telegramId = String(user.id);
-      userData = {
-        id: String(user.id),
-        username: user.username || user.first_name || 'Пользователь',
-        firstName: user.first_name || '',
-        lastName: user.last_name || '',
-        photoUrl: user.photo_url || null
-      };
-      isAuthorized = true;
-      console.log('✅ Авторизован через Telegram:', userData.username);
-      return true;
+      console.warn('⚠️ Не в Telegram и нет user_id в URL');
+      isAuthorized = false;
+      return false;
       
     } catch (e) {
       console.error('❌ Ошибка авторизации:', e);
@@ -495,19 +505,33 @@
           <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
           ${t('login_btn')}
         </button>
-        <div style="font-size:11px;opacity:0.4;margin-top:16px;">
+        <div class="bot-login-hint">
+          ${t('open_in_telegram')}
+          <br>
+          ${t('bot_login')} <a href="#" id="bot-link">@ваш_бот</a>
+        </div>
+        <div style="font-size:11px;opacity:0.4;margin-top:8px;">
           🔒 Данные синхронизируются через Telegram
         </div>
       </div>
     `;
     
+    // Кнопка входа через Telegram
     document.getElementById('telegram-login-btn').onclick = function() {
-      // Открываем Telegram для авторизации
       if (window.Telegram && Telegram.WebApp) {
+        // Если уже в Telegram, но не авторизован
         Telegram.WebApp.openLink('https://t.me/' + (Telegram.WebApp.initDataUnsafe?.user?.username || ''));
       } else {
-        alert('❌ Приложение должно быть открыто через Telegram');
+        // Если не в Telegram - открываем бота
+        var botUsername = '@ваш_бот'; // Замените на имя вашего бота
+        window.open('https://t.me/' + botUsername.replace('@', ''), '_blank');
       }
+    };
+    
+    // Ссылка на бота
+    document.getElementById('bot-link').onclick = function(e) {
+      e.preventDefault();
+      window.open('https://t.me/ваш_бот', '_blank');
     };
   }
 
@@ -516,8 +540,13 @@
   // ============================================================
   async function loadProfile() {
     try {
-      if (!telegramId) return;
+      if (!telegramId) {
+        console.error('❌ Нет Telegram ID');
+        return;
+      }
+      
       setSyncStatus('loading');
+      console.log('📡 Загрузка профиля для ID:', telegramId);
       
       var { data, error } = await supabaseClient
         .from('profiles')
@@ -526,11 +555,13 @@
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
+        console.error('❌ Ошибка запроса профиля:', error);
         setSyncStatus('error');
         return;
       }
 
       if (!data) {
+        console.log('🆕 Создание профиля для ID:', telegramId);
         var { error: insertError } = await supabaseClient
           .from('profiles')
           .insert([{ 
@@ -540,10 +571,11 @@
             theme: 'light'
           }]);
         if (insertError) { 
-          console.error('Ошибка создания профиля:', insertError);
+          console.error('❌ Ошибка создания профиля:', insertError);
           setSyncStatus('error'); 
           return; 
         }
+        console.log('✅ Профиль создан');
         setSyncStatus('ok');
         return;
       }
@@ -551,9 +583,10 @@
       currentLang = data.language || 'ru';
       if (data.theme === 'dark') document.body.classList.add('dark');
       else document.body.classList.remove('dark');
+      console.log('✅ Профиль загружен, язык:', currentLang);
       setSyncStatus('ok');
     } catch (err) {
-      console.error('Ошибка загрузки профиля:', err);
+      console.error('❌ Ошибка загрузки профиля:', err);
       setSyncStatus('error');
     }
   }
@@ -1060,13 +1093,14 @@
     
     var hasTelegram = initTelegram();
     
-    // Если не в Telegram - показываем экран входа
-    if (!hasTelegram || !telegramId) {
+    // Если не авторизован - показываем экран входа
+    if (!isAuthorized || !telegramId) {
       renderLoginScreen();
       return;
     }
     
     // Авторизован - загружаем данные
+    console.log('👤 Пользователь авторизован, ID:', telegramId);
     showNavigation(true);
     updateUserUI();
     loadProfile().then(function() {
