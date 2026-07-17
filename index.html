@@ -262,24 +262,43 @@
 
   // --- Инициализация Telegram SDK ---
   try {
-      Telegram.WebApp.ready(); // Сообщаем Telegram, что приложение готово
-      const initData = Telegram.WebApp.initDataUnsafe;
-      if (initData && initData.user) {
-          telegramId = BigInt(initData.user.id); // Получаем Telegram ID
-          console.log("✅ Telegram ID получен:", telegramId.toString());
-      } else {
-          console.warn("⚠️ Telegram ID не получен. Работаем в режиме тестирования.");
+      // Проверяем, определён ли Telegram
+      if (typeof Telegram === 'undefined') {
+          console.error("❌ Telegram SDK не загружен или не определён.");
           // --- ЛОКАЛЬНОЕ ТЕСТИРОВАНИЕ ---
-          // Установите ваш реальный Telegram ID для тестирования
-          // telegramId = BigInt("123456789"); // ЗАМЕНИТЕ НА СВОЙ ID
-          // УБЕРИТЕ ЭТУ СТРОКУ В РЕАЛЬНОЙ СРЕДЕ TELEGRAM
-          telegramId = BigInt(123456789); // Пример: временный ID для теста
-          console.log(`🔧 Используем тестовый Telegram ID: ${telegramId}`);
+          console.warn("⚠️ Работаем в режиме локального тестирования.");
+          if (TEST_TELEGRAM_ID) {
+              telegramId = TEST_TELEGRAM_ID;
+              console.log(`🔧 Используем тестовый Telegram ID: ${telegramId}`);
+          } else {
+              console.error("❌ Не указан TEST_TELEGRAM_ID для локального тестирования.");
+              alert("Не указан Telegram ID для тестирования.");
+          }
+      } else {
+          Telegram.WebApp.ready(); // Сообщаем Telegram, что приложение готово
+          const initData = Telegram.WebApp.initDataUnsafe;
+          if (initData && initData.user) {
+              telegramId = BigInt(initData.user.id); // Получаем Telegram ID
+              console.log("✅ Telegram ID получен:", telegramId.toString());
+          } else {
+              console.warn("⚠️ Telegram ID не получен из initData. Работаем в режиме локального тестирования.");
+              // --- ЛОКАЛЬНОЕ ТЕСТИРОВАНИЕ ---
+              if (TEST_TELEGRAM_ID) {
+                  telegramId = TEST_TELEGRAM_ID;
+                  console.log(`🔧 Используем тестовый Telegram ID: ${telegramId}`);
+              } else {
+                  console.error("❌ Не указан TEST_TELEGRAM_ID для локального тестирования.");
+                  alert("Не указан Telegram ID для тестирования.");
+              }
+          }
       }
   } catch (e) {
-      console.error("❌ Ошибка инициализации Telegram SDK:", e);
-      // Если SDK не загрузился, можно попробовать тестовый ID
-      // telegramId = BigInt("123456789");
+      console.error("❌ Ошибка инициализации Telegram SDK или получения ID:", e);
+      // Если всё сломалось, можно попробовать тестовый ID, если он определён
+      if (TEST_TELEGRAM_ID) {
+          telegramId = TEST_TELEGRAM_ID;
+          console.log(`🔧 Используем тестовый Telegram ID после ошибки: ${telegramId}`);
+      }
   }
 
   if (!telegramId) {
