@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Task & Payment Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Подключаем Telegram SDK -->
   <script src="https://unpkg.com/@twa-dev/sdk"></script>
   <script src="https://unpkg.com/supabase@latest/dist/umd/supabase.min.js"></script>
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
@@ -188,7 +189,7 @@
 <body class="light">
 
 <div class="container">
-  <header>
+  <header id="app-header">
     <h1>Tracker</h1>
     <button id="settings-btn">⚙️</button>
   </header>
@@ -244,20 +245,44 @@
 </div>
 
 <script type="module">
-  const SUPABASE_URL = 'https://lzwbdobhodwdmjzcmdjs.supabase.co';
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw';
+  const SUPABASE_URL = 'https://your-project.supabase.co'; // Замените на ваш URL
+  const SUPABASE_KEY = 'your-anon-key'; // Замените на ваш anon key
+  if (!SUPABASE_URL || !SUPABASE_KEY || SUPABASE_URL.includes('your-project')) {
+      console.error("Пожалуйста, укажите действительные SUPABASE_URL и SUPABASE_KEY.");
+      alert("Конфигурация Supabase не установлена. Проверьте консоль.");
+  }
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let telegramId = null;
   let currentSection = 'tasks';
   let currentLang = 'ru';
 
-  Telegram.WebApp.ready();
-  const initData = Telegram.WebApp.initDataUnsafe;
-  if (initData && initData.user) {
-    telegramId = BigInt(initData.user.id);
-  } else {
-    alert('Ошибка: не удалось получить Telegram ID');
+  // --- Инициализация Telegram SDK ---
+  try {
+      Telegram.WebApp.ready(); // Сообщаем Telegram, что приложение готово
+      const initData = Telegram.WebApp.initDataUnsafe;
+      if (initData && initData.user) {
+          telegramId = BigInt(initData.user.id); // Получаем Telegram ID
+          console.log("Telegram ID получен:", telegramId.toString());
+      } else {
+          // --- Тестирование в браузере ---
+          // Замените '123456789' на ваш реальный Telegram ID
+          // telegramId = BigInt("123456789");
+          console.warn("Telegram ID не получен. Работаем в режиме тестирования. Установите telegramId вручную.");
+          // Для локального тестирования раскомментируйте строку ниже и введите ваш ID
+          // telegramId = BigInt("123456789");
+          // УБЕРИТЕ ЭТО В РЕАЛЬНОЙ СРЕДЕ TELEGRAM
+          telegramId = BigInt(Math.floor(Math.random() * 1000000000)); // Временный ID для теста
+      }
+  } catch (e) {
+      console.error("Ошибка инициализации Telegram SDK:", e);
+      // На случай, если SDK не загрузился, тоже можно попробовать тестовый ID
+      // telegramId = BigInt("123456789");
+  }
+
+  if (!telegramId) {
+      console.error("Telegram ID не установлен. Проверьте переменную telegramId.");
+      alert("Telegram ID не установлен. Приложение не может работать.");
   }
 
   const translations = {
@@ -314,25 +339,45 @@
   }
 
   async function loadProfile() {
-    const { data } = await supabase.from('profiles').select('*').eq('telegram_id', telegramId).single();
-    if (!data) {
-      await supabase.from('profiles').insert([{ telegram_id: telegramId }]);
-      currentLang = 'ru';
-      document.body.classList.remove('dark');
-    } else {
-      currentLang = data.language;
-      document.body.classList.toggle('dark', data.theme === 'dark');
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').eq('telegram_id', telegramId).single();
+      if (error) {
+        if (error.code === '42P01') {
+            console.error("Таблица 'profiles' не найдена. Проверьте, что SQL-скрипт выполнен.");
+            alert("Ошибка базы данных: таблица profiles отсутствует.");
+        } else if (error.code === 'PGRST301') {
+            console.error("RLS политика не позволяет выполнить запрос. Проверьте настройки Supabase.");
+            alert("Ошибка доступа к данным.");
+        } else {
+            console.error("Ошибка при загрузке профиля:", error);
+        }
+        // Создаём профиль, если его нет
+        const { error: insertError } = await supabase.from('profiles').insert([{ telegram_id: telegramId }]);
+        if (insertError) {
+            console.error("Ошибка при создании профиля:", insertError);
+        } else {
+            currentLang = 'ru';
+            document.body.classList.remove('dark');
+        }
+      } else {
+        currentLang = data.language;
+        document.body.classList.toggle('dark', data.theme === 'dark');
+      }
+    } catch (err) {
+      console.error("Необработанная ошибка при загрузке профиля:", err);
     }
   }
 
   async function toggleTheme() {
     const newTheme = document.body.classList.toggle('dark') ? 'dark' : 'light';
-    await supabase.from('profiles').update({ theme: newTheme }).eq('telegram_id', telegramId);
+    const { error } = await supabase.from('profiles').update({ theme: newTheme }).eq('telegram_id', telegramId);
+    if (error) console.error("Ошибка при обновлении темы:", error);
   }
 
   async function changeLanguage(lang) {
     currentLang = lang;
-    await supabase.from('profiles').update({ language: lang }).eq('telegram_id', telegramId);
+    const { error } = await supabase.from('profiles').update({ language: lang }).eq('telegram_id', telegramId);
+    if (error) console.error("Ошибка при обновлении языка:", error);
     updateUI();
   }
 
@@ -355,113 +400,152 @@
   }
 
   async function loadFolders() {
-    const { data } = await supabase.from('folders').select('id, name').eq('telegram_id', telegramId);
-    const folderSelect = document.getElementById('item-folder');
-    folderSelect.innerHTML = `<option value="">${t('folder')}</option>`;
-    data.forEach(folder => {
-      const option = document.createElement('option');
-      option.value = folder.id;
-      option.textContent = folder.name;
-      folderSelect.appendChild(option);
-    });
+    try {
+      const { data, error } = await supabase.from('folders').select('id, name').eq('telegram_id', telegramId);
+      if (error) throw error;
+      const folderSelect = document.getElementById('item-folder');
+      folderSelect.innerHTML = `<option value="">${t('folder')}</option>`;
+      data.forEach(folder => {
+        const option = document.createElement('option');
+        option.value = folder.id;
+        option.textContent = folder.name;
+        folderSelect.appendChild(option);
+      });
+    } catch (err) {
+      console.error("Ошибка при загрузке папок:", err);
+    }
   }
 
   async function loadTasks() {
-    const { data } = await supabase.from('tasks').select('*').eq('telegram_id', telegramId);
-    const content = document.getElementById('content');
-    content.innerHTML = `<div><input type="text" id="search-tasks" placeholder="${t('search')}" /></div>`;
-    const searchInput = document.getElementById('search-tasks');
-    searchInput.oninput = () => {
-      const filter = searchInput.value.toLowerCase();
-      document.querySelectorAll('.task-item').forEach(el => {
-        el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
-      });
-    };
-    data.forEach(task => {
-      const dueDate = task.deadline ? new Date(task.deadline) : null;
-      let statusClass = '';
-      if (dueDate) {
-        const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
-        if (diff < 1) statusClass = 'red';
-        else if (diff < 3) statusClass = 'yellow';
-        else statusClass = 'green';
-      }
-      content.innerHTML += `
-        <div class="task-item glass-card">
+    try {
+      const { data, error } = await supabase.from('tasks').select('*').eq('telegram_id', telegramId);
+      if (error) throw error;
+      const content = document.getElementById('content');
+      content.innerHTML = `<div class="glass-card"><input type="text" id="search-tasks" placeholder="${t('search')}" /></div>`;
+      const searchInput = document.getElementById('search-tasks');
+      searchInput.oninput = () => {
+        const filter = searchInput.value.toLowerCase();
+        document.querySelectorAll('.task-item').forEach(el => {
+          el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
+        });
+      };
+      // Добавляем кнопку "Добавить задачу"
+      const addButton = document.createElement('button');
+      addButton.id = 'add-task-btn';
+      addButton.textContent = t('add');
+      content.querySelector('.glass-card').appendChild(addButton);
+
+      data.forEach(task => {
+        const dueDate = task.deadline ? new Date(task.deadline) : null;
+        let statusClass = '';
+        if (dueDate) {
+          const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
+          if (diff < 1) statusClass = 'red';
+          else if (diff < 3) statusClass = 'yellow';
+          else statusClass = 'green';
+        }
+        const taskDiv = document.createElement('div');
+        taskDiv.className = 'task-item glass-card';
+        taskDiv.innerHTML = `
           <span>${task.title}</span>
           <div>
             <span class="deadline-indicator ${statusClass}"></span>
             <button onclick="shareItem('task', '${task.id}')">${t('share')}</button>
           </div>
-        </div>
-      `;
-    });
+        `;
+        content.appendChild(taskDiv);
+      });
+    } catch (err) {
+      console.error("Ошибка при загрузке задач:", err);
+    }
   }
 
   async function loadPayments() {
-    const { data } = await supabase.from('payments').select('*').eq('telegram_id', telegramId);
-    const content = document.getElementById('content');
-    content.innerHTML = `<div><input type="text" id="search-payments" placeholder="${t('search')}" /></div>`;
-    const searchInput = document.getElementById('search-payments');
-    searchInput.oninput = () => {
-      const filter = searchInput.value.toLowerCase();
-      document.querySelectorAll('.payment-item').forEach(el => {
-        el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
-      });
-    };
-    data.forEach(payment => {
-      const dueDate = payment.due_date ? new Date(payment.due_date) : null;
-      let statusClass = '';
-      if (dueDate) {
-        const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
-        if (diff < 2) statusClass = 'red';
-        else if (diff < 7) statusClass = 'yellow';
-        else statusClass = 'green';
-      }
-      content.innerHTML += `
-        <div class="payment-item glass-card">
+    try {
+      const { data, error } = await supabase.from('payments').select('*').eq('telegram_id', telegramId);
+      if (error) throw error;
+      const content = document.getElementById('content');
+      content.innerHTML = `<div class="glass-card"><input type="text" id="search-payments" placeholder="${t('search')}" /></div>`;
+      const searchInput = document.getElementById('search-payments');
+      searchInput.oninput = () => {
+        const filter = searchInput.value.toLowerCase();
+        document.querySelectorAll('.payment-item').forEach(el => {
+          el.style.display = el.textContent.toLowerCase().includes(filter) ? '' : 'none';
+        });
+      };
+      // Добавляем кнопку "Добавить платёж"
+      const addButton = document.createElement('button');
+      addButton.id = 'add-payment-btn';
+      addButton.textContent = t('add');
+      content.querySelector('.glass-card').appendChild(addButton);
+
+      data.forEach(payment => {
+        const dueDate = payment.due_date ? new Date(payment.due_date) : null;
+        let statusClass = '';
+        if (dueDate) {
+          const diff = (dueDate - new Date()) / (1000 * 60 * 60 * 24);
+          if (diff < 2) statusClass = 'red';
+          else if (diff < 7) statusClass = 'yellow';
+          else statusClass = 'green';
+        }
+        const paymentDiv = document.createElement('div');
+        paymentDiv.className = 'payment-item glass-card';
+        paymentDiv.innerHTML = `
           <span>${payment.title}</span>
           <div>
             <span class="deadline-indicator ${statusClass}"></span>
             <button onclick="shareItem('payment', '${payment.id}')">${t('share')}</button>
           </div>
-        </div>
-      `;
-    });
+        `;
+        content.appendChild(paymentDiv);
+      });
+    } catch (err) {
+      console.error("Ошибка при загрузке платежей:", err);
+    }
   }
 
   async function shareItem(type, id) {
     try {
-      const link = `${window.location.origin}/shared?resource=${type}&id=${id}`;
-      navigator.clipboard.writeText(link);
-      alert('Ссылка скопирована в буфер обмена!');
+      // В реальной реализации вы бы генерировали уникальную ссылку и записывали её в таблицу shares
+      // Пока просто копируем ссылку на сам сайт
+      const link = `${window.location.origin}?shared_resource=${type}&id=${id}`;
+      await navigator.clipboard.writeText(link);
+      alert(t('share') + '!'); // Или показать сообщение об успешном копировании
     } catch (err) {
-      console.error('Failed to copy: ', err);
+      console.error('Failed to copy share link: ', err);
       alert('Не удалось скопировать ссылку');
     }
   }
 
   async function exportData() {
-    const [tasksRes, paymentsRes] = await Promise.all([
-      supabase.from('tasks').select('*').eq('telegram_id', telegramId),
-      supabase.from('payments').select('*').eq('telegram_id', telegramId)
-    ]);
+    try {
+      const [tasksRes, paymentsRes] = await Promise.all([
+        supabase.from('tasks').select('*').eq('telegram_id', telegramId),
+        supabase.from('payments').select('*').eq('telegram_id', telegramId)
+      ]);
 
-    const wb = XLSX.utils.book_new();
-    if (tasksRes.data.length > 0) {
-      const wsTasks = XLSX.utils.json_to_sheet(tasksRes.data);
-      XLSX.utils.book_append_sheet(wb, wsTasks, "Tasks");
-    }
-    if (paymentsRes.data.length > 0) {
-      const wsPayments = XLSX.utils.json_to_sheet(paymentsRes.data);
-      XLSX.utils.book_append_sheet(wb, wsPayments, "Payments");
-    }
+      if (tasksRes.error) throw tasksRes.error;
+      if (paymentsRes.error) throw paymentsRes.error;
 
-    XLSX.writeFile(wb, `tracker_data_${Date.now()}.xlsx`);
+      const wb = XLSX.utils.book_new();
+      if (tasksRes.data.length > 0) {
+        const wsTasks = XLSX.utils.json_to_sheet(tasksRes.data.map(t => ({...t, telegram_id: undefined}))); // Исключить telegram_id из экспорта
+        XLSX.utils.book_append_sheet(wb, wsTasks, "Tasks");
+      }
+      if (paymentsRes.data.length > 0) {
+        const wsPayments = XLSX.utils.json_to_sheet(paymentsRes.data.map(p => ({...p, telegram_id: undefined}))); // Исключить telegram_id из экспорта
+        XLSX.utils.book_append_sheet(wb, wsPayments, "Payments");
+      }
+
+      XLSX.writeFile(wb, `tracker_data_${Date.now()}.xlsx`);
+    } catch (err) {
+      console.error("Ошибка при экспорте:", err);
+      alert("Ошибка при экспорте данных. Проверьте консоль.");
+    }
   }
 
   function importData() {
-    alert('Функция импорта в разработке. Пожалуйста, используйте экспорт.');
+    alert(t('import') + '. ' + 'Пожалуйста, используйте экспорт.');
   }
 
   function openSettings() {
@@ -491,6 +575,15 @@
     if (section === 'tasks') loadFolders();
   }
 
+  // --- Добавляем обработчики для кнопок "Добавить" ---
+  document.addEventListener('click', e => {
+    if (e.target.id === 'add-task-btn') {
+      openForm('tasks');
+    } else if (e.target.id === 'add-payment-btn') {
+      openForm('payments');
+    }
+  });
+
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -500,12 +593,6 @@
       else if (currentSection === 'payments') loadPayments();
       else if (currentSection === 'settings') openSettings();
     });
-  });
-
-  document.addEventListener('click', e => {
-    if (e.target.id === 'add-task-btn' || e.target.id === 'add-payment-btn') {
-      openForm(e.target.id.includes('task') ? 'tasks' : 'payments');
-    }
   });
 
   document.getElementById('modal').addEventListener('click', e => {
@@ -520,7 +607,7 @@
     const deadline = document.getElementById('item-deadline').value;
     const tags = document.getElementById('item-tags').value.split(',').map(tag => tag.trim()).filter(Boolean);
 
-    await supabase.from('tasks').insert([{
+    const { error } = await supabase.from('tasks').insert([{
       telegram_id: telegramId,
       title,
       folder_id: folder || null,
@@ -528,7 +615,12 @@
       tags,
       deadline: deadline || null
     }]);
-    loadTasks();
+    if (error) {
+        console.error("Ошибка при создании задачи:", error);
+        alert("Ошибка при создании задачи. Проверьте консоль.");
+    } else {
+        loadTasks();
+    }
     document.getElementById('modal').style.display = 'none';
     document.getElementById('modal-form').reset();
   });
@@ -539,13 +631,18 @@
     const dueDate = document.getElementById('payment-due-date').value;
     const recurrence = document.getElementById('payment-recurrence').value;
 
-    await supabase.from('payments').insert([{
+    const { error } = await supabase.from('payments').insert([{
       telegram_id: telegramId,
       title,
       due_date: dueDate,
       recurrence
     }]);
-    loadPayments();
+    if (error) {
+        console.error("Ошибка при создании платежа:", error);
+        alert("Ошибка при создании платежа. Проверьте консоль.");
+    } else {
+        loadPayments();
+    }
     document.getElementById('modal').style.display = 'none';
     document.getElementById('modal-form-payment').reset();
   });
@@ -557,13 +654,17 @@
     openSettings();
   });
 
+  // Инициализация
   loadProfile().then(() => {
-    loadTasks();
+    loadTasks(); // Загрузка задач по умолчанию
     if (window.innerWidth >= 768) {
       document.querySelector('.desktop-nav').classList.remove('hidden');
       document.querySelector('.nav-mobile').classList.add('hidden');
     }
+  }).catch(err => {
+      console.error("Ошибка при инициализации:", err);
   });
+
 </script>
 </body>
 </html>
