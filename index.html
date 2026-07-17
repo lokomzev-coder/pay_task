@@ -18,10 +18,10 @@
       --success: #00b894;
       --warning: #fdcb6e;
       --danger: #ff7675;
-      --border-radius: 16px;
-      --glass-bg: rgba(255, 255, 255, 0.15);
-      --glass-border: rgba(255, 255, 255, 0.2);
-      --glass-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
+      --border-radius: 12px;
+      --glass-bg: rgba(255, 255, 255, 0.1);
+      --glass-border: rgba(255, 255, 255, 0.15);
+      --glass-shadow: 0 4px 16px rgba(31, 38, 135, 0.08);
       --font-family: 'Nunito', sans-serif;
     }
 
@@ -29,75 +29,70 @@
       --bg-primary: #0d1224;
       --bg-secondary: rgba(30, 30, 46, 0.7);
       --text-primary: #e0e0ff;
-      --glass-bg: rgba(30, 30, 46, 0.3);
-      --glass-border: rgba(255, 255, 255, 0.1);
-      --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      --glass-bg: rgba(30, 30, 46, 0.2);
+      --glass-border: rgba(255, 255, 255, 0.06);
+      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-family); transition: background-color 0.3s ease, color 0.3s ease; }
     body { background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
-    .container { max-width: 1200px; width: 100%; margin: 0 auto; padding: 20px; padding-bottom: 80px; }
-    .glass-card { background: var(--glass-bg); backdrop-filter: blur(10px); border: 1px solid var(--glass-border); border-radius: var(--border-radius); box-shadow: var(--glass-shadow); padding: 24px; margin-bottom: 20px; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
-    header h1 { font-size: 24px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-    header .icon { width: 28px; height: 28px; stroke: currentColor; fill: none; stroke-width: 2; }
-    .nav-mobile { position: fixed; bottom: 0; left: 0; right: 0; display: flex; justify-content: space-around; padding: 16px; background: var(--glass-bg); backdrop-filter: blur(10px); border-top: 1px solid var(--glass-border); z-index: 100; display: none; }
-    .nav-btn { background: none; border: none; color: var(--text-primary); font-size: 0.75rem; cursor: pointer; padding: 6px 12px; border-radius: 8px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-    .nav-btn .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
-    .nav-btn.active { background: var(--accent); color: white; }
-    .task-item, .payment-item { padding: 12px; border-radius: 12px; margin: 8px 0; display: flex; justify-content: space-between; align-items: center; background: var(--bg-secondary); }
-    .deadline-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-left: 8px; }
-    .green { background: var(--success); }
-    .yellow { background: var(--warning); }
-    .red { background: var(--danger); }
-    input, select, button { padding: 12px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--bg-secondary); color: var(--text-primary); margin: 4px 0; font-size: 16px; width: 100%; }
-    button { background: var(--accent); color: white; cursor: pointer; border: none; font-weight: 600; padding: 12px 24px; width: auto; display: inline-flex; align-items: center; gap: 8px; justify-content: center; }
-    button .icon { width: 20px; height: 20px; stroke: white; fill: none; stroke-width: 2; }
-    button.secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--glass-border); }
-    button.secondary .icon { stroke: var(--text-primary); }
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 200; justify-content: center; align-items: center; }
-    .modal-content { width: 90%; max-width: 500px; padding: 24px; border-radius: var(--border-radius); background: var(--bg-secondary); box-shadow: var(--glass-shadow); backdrop-filter: blur(10px); max-height: 90vh; overflow-y: auto; }
-    .hidden { display: none !important; }
-    .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-    .flex-between input { flex: 1; }
-    .flex-between button { width: auto; }
+    .container { max-width: 1200px; width: 100%; margin: 0 auto; padding: 16px 20px 80px 20px; }
+    .glass-card { background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); border-radius: var(--border-radius); box-shadow: var(--glass-shadow); padding: 20px; margin-bottom: 16px; }
+    header { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
+    header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+    header .icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; }
     
+    /* Мобильная навигация */
+    .nav-mobile { position: fixed; bottom: 0; left: 0; right: 0; display: none; justify-content: space-around; padding: 12px; background: var(--glass-bg); backdrop-filter: blur(12px); border-top: 1px solid var(--glass-border); z-index: 100; }
+    .nav-btn { background: none; border: none; color: var(--text-primary); font-size: 0.65rem; cursor: pointer; padding: 4px 8px; border-radius: 8px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 2px; opacity: 0.6; }
+    .nav-btn .icon { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+    .nav-btn.active { opacity: 1; color: var(--accent); }
+    .nav-btn.active .icon { stroke: var(--accent); }
+    
+    /* Десктоп навигация - компактная, прозрачная */
     .desktop-nav { 
       display: none; 
       flex-direction: column; 
-      width: 200px; 
-      padding: 20px; 
+      width: 56px; 
+      padding: 12px 8px; 
       position: fixed; 
-      height: 100%; 
-      top: 0; 
-      left: 0; 
+      top: 50%;
+      left: 16px;
+      transform: translateY(-50%);
       background: var(--glass-bg); 
-      backdrop-filter: blur(10px); 
-      border-right: 1px solid var(--glass-border); 
+      backdrop-filter: blur(12px); 
+      border: 1px solid var(--glass-border); 
+      border-radius: 16px;
       z-index: 50;
-      justify-content: center;
+      gap: 4px;
+      box-shadow: var(--glass-shadow);
     }
     .desktop-nav.visible { display: flex; }
     .desktop-nav .nav-btn { 
-      flex-direction: row; 
-      justify-content: flex-start; 
-      gap: 12px; 
-      padding: 12px 20px; 
-      font-size: 0.9rem;
+      flex-direction: column; 
+      align-items: center;
+      gap: 2px; 
+      padding: 8px 4px; 
+      font-size: 0.55rem;
       width: 100%;
-      border-radius: 12px;
+      border-radius: 10px;
+      opacity: 0.5;
+      transition: all 0.2s;
     }
+    .desktop-nav .nav-btn:hover { opacity: 0.8; background: var(--glass-bg); }
     .desktop-nav .nav-btn .icon { width: 20px; height: 20px; }
+    .desktop-nav .nav-btn.active { opacity: 1; background: var(--accent); color: white; }
+    .desktop-nav .nav-btn.active .icon { stroke: white; }
     
-    main { padding-top: 20px; }
+    main { padding-top: 8px; }
     main.full-width { margin-left: 0; }
-    main.with-nav { margin-left: 220px; }
+    main.with-nav { margin-left: 72px; }
     
     @media (min-width: 768px) { 
       .nav-mobile { display: none !important; } 
       .desktop-nav.visible { display: flex; }
-      main.with-nav { margin-left: 220px; }
-      .container { padding-bottom: 20px; }
+      main.with-nav { margin-left: 72px; }
+      .container { padding: 16px 24px 20px 24px; }
     }
     @media (max-width: 767px) {
       .desktop-nav { display: none !important; }
@@ -106,64 +101,94 @@
       .nav-mobile { display: flex !important; }
     }
 
-    .loading { text-align: center; padding: 40px; font-size: 18px; opacity: 0.7; }
-    .empty-state { text-align: center; padding: 30px; color: var(--text-primary); opacity: 0.6; }
-    .error-msg { background: var(--danger); color: white; padding: 16px; border-radius: var(--border-radius); text-align: center; }
-    .user-badge { display: flex; align-items: center; gap: 10px; font-size: 14px; opacity: 0.8; }
-    .user-badge .avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
-    .sync-status { font-size: 12px; padding: 4px 12px; border-radius: 20px; background: var(--success); color: white; display: inline-block; }
+    .task-item, .payment-item { padding: 12px 16px; border-radius: 10px; margin: 6px 0; display: flex; justify-content: space-between; align-items: center; background: var(--bg-secondary); border: 1px solid var(--glass-border); }
+    .deadline-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: 8px; }
+    .green { background: var(--success); }
+    .yellow { background: var(--warning); }
+    .red { background: var(--danger); }
+    
+    input, select, button { padding: 10px 14px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--bg-secondary); color: var(--text-primary); margin: 4px 0; font-size: 15px; width: 100%; outline: none; }
+    input:focus, select:focus { border-color: var(--accent); }
+    button { background: var(--accent); color: white; cursor: pointer; border: none; font-weight: 600; padding: 10px 20px; width: auto; display: inline-flex; align-items: center; gap: 8px; justify-content: center; border-radius: 10px; }
+    button .icon { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; }
+    button.secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--glass-border); }
+    button.secondary .icon { stroke: var(--text-primary); }
+    button.danger { background: var(--danger); }
+    
+    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 200; justify-content: center; align-items: center; }
+    .modal-content { width: 90%; max-width: 460px; padding: 24px; border-radius: var(--border-radius); background: var(--bg-secondary); box-shadow: var(--glass-shadow); backdrop-filter: blur(12px); max-height: 90vh; overflow-y: auto; border: 1px solid var(--glass-border); }
+    .hidden { display: none !important; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .flex-between input { flex: 1; }
+    .flex-between button { width: auto; }
+    
+    .loading { text-align: center; padding: 40px; font-size: 16px; opacity: 0.6; }
+    .empty-state { text-align: center; padding: 30px; color: var(--text-primary); opacity: 0.5; font-size: 14px; }
+    .error-msg { background: var(--danger); color: white; padding: 14px; border-radius: var(--border-radius); text-align: center; }
+    .user-badge { display: flex; align-items: center; gap: 8px; font-size: 13px; opacity: 0.8; }
+    .user-badge .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
+    .sync-status { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--success); color: white; display: inline-block; }
     .sync-status.offline { background: var(--danger); }
     .sync-status.loading { background: var(--warning); color: #333; }
-    .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 20px; }
-    .login-screen h2 { font-size: 28px; }
-    .login-screen p { opacity: 0.7; max-width: 400px; }
-    .login-icon { width: 80px; height: 80px; stroke: var(--accent); fill: none; stroke-width: 1.5; }
-    .telegram-login { background: #0088cc; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 18px; padding: 16px; width: 100%; max-width: 320px; }
+    
+    /* Экран входа */
+    .login-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; text-align: center; gap: 16px; }
+    .login-screen h2 { font-size: 24px; }
+    .login-screen p { opacity: 0.6; max-width: 360px; font-size: 14px; }
+    .login-icon { width: 64px; height: 64px; stroke: var(--accent); fill: none; stroke-width: 1.5; }
+    .telegram-login { background: #0088cc; display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 16px; padding: 14px 32px; width: 100%; max-width: 280px; border-radius: 12px; }
     .telegram-login:hover { background: #006699; }
-    .telegram-login .icon { stroke: white; width: 24px; height: 24px; }
-    .icon-btn { background: none; border: none; cursor: pointer; padding: 4px 8px; display: inline-flex; align-items: center; }
-    .icon-btn .icon { width: 22px; height: 22px; stroke: var(--text-primary); fill: none; stroke-width: 2; }
+    .telegram-login .icon { stroke: white; width: 22px; height: 22px; }
+    .icon-btn { background: none; border: none; cursor: pointer; padding: 4px 6px; display: inline-flex; align-items: center; border-radius: 8px; }
+    .icon-btn:hover { background: var(--glass-bg); }
+    .icon-btn .icon { width: 20px; height: 20px; stroke: var(--text-primary); fill: none; stroke-width: 2; }
+    
     .export-options { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-    .export-options button { flex: 1; min-width: 100px; }
-    .tag { display: inline-block; background: var(--glass-bg); padding: 2px 10px; border-radius: 12px; font-size: 12px; margin: 2px; }
-    .flex-wrap { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .export-options button { flex: 1; min-width: 80px; }
+    .tag { display: inline-block; background: var(--glass-bg); padding: 2px 10px; border-radius: 12px; font-size: 11px; margin: 2px; border: 1px solid var(--glass-border); }
+    .flex-wrap { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    
+    .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border); }
+    .settings-row:last-child { border-bottom: none; }
+    .settings-row label { font-size: 14px; font-weight: 600; }
+    .settings-row select, .settings-row button { width: auto; margin: 0; }
   </style>
 </head>
 <body class="light">
 
 <div class="container">
   <header id="app-header">
-    <div style="display:flex;align-items:center;gap:12px;">
+    <div style="display:flex;align-items:center;gap:10px;">
       <h1>
-        <svg class="icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
         Tracker
       </h1>
       <span class="sync-status" id="sync-status">Синхр.</span>
     </div>
-    <div style="display:flex;align-items:center;gap:12px;">
+    <div style="display:flex;align-items:center;gap:8px;">
       <div class="user-badge" id="user-badge">
         <span id="user-name">Гость</span>
         <div class="avatar" id="user-avatar">👤</div>
       </div>
       <button class="icon-btn" id="settings-btn">
-        <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
     </div>
   </header>
 
-  <!-- Desktop навигация -->
+  <!-- Десктоп навигация - компактная, слева по центру -->
   <div class="desktop-nav" id="desktop-nav">
-    <button class="nav-btn active" data-section="tasks">
-      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      <span>ЗАДАЧИ</span>
+    <button class="nav-btn active" data-section="tasks" title="Задачи">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      <span>Задачи</span>
     </button>
-    <button class="nav-btn" data-section="payments">
-      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-      <span>ПЛАТЕЖИ</span>
+    <button class="nav-btn" data-section="payments" title="Платежи">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+      <span>Платежи</span>
     </button>
-    <button class="nav-btn" data-section="settings">
-      <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      <span>НАСТРОЙКИ</span>
+    <button class="nav-btn" data-section="settings" title="Настройки">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Настройки</span>
     </button>
   </div>
 
@@ -175,19 +200,19 @@
 <!-- Мобильная навигация -->
 <div class="nav-mobile" id="nav-mobile">
   <button class="nav-btn active" data-section="tasks">
-    <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-    <span>ЗАДАЧИ</span>
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    <span>Задачи</span>
   </button>
   <button class="nav-btn" data-section="payments">
-    <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-    <span>ПЛАТЕЖИ</span>
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+    <span>Платежи</span>
   </button>
 </div>
 
 <!-- Модальное окно для задач/платежей -->
 <div class="modal" id="modal">
   <div class="modal-content">
-    <h3 id="modal-title">Новая задача</h3>
+    <h3 id="modal-title" style="margin-bottom:12px;">Новая задача</h3>
     <form id="modal-form">
       <input type="text" id="item-title" placeholder="Название" required />
       <select id="item-folder"><option value="">Без папки</option></select>
@@ -199,7 +224,7 @@
       <input type="date" id="item-deadline" />
       <input type="text" id="item-tags" placeholder="Теги (через запятую)" />
       <button type="submit">
-        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Создать
       </button>
     </form>
@@ -214,7 +239,7 @@
         <option value="1y">1 год</option>
       </select>
       <button type="submit">
-        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         Создать
       </button>
     </form>
@@ -224,30 +249,30 @@
 <!-- Модальное окно для экспорта/импорта -->
 <div class="modal" id="export-modal">
   <div class="modal-content">
-    <h3 id="export-title">Экспорт данных</h3>
+    <h3 id="export-title" style="margin-bottom:12px;">Экспорт данных</h3>
     <div id="export-content">
-      <p style="margin-bottom:16px;opacity:0.7;">Выберите формат для экспорта данных</p>
+      <p style="margin-bottom:14px;opacity:0.6;font-size:14px;">Выберите формат для экспорта данных</p>
       <div class="export-options">
         <button id="export-json-btn">
-          <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>
           JSON
         </button>
         <button id="export-excel-btn">
-          <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="16" x2="16" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="20" x2="13" y2="20"/></svg>
+          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="16" x2="16" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="20" x2="13" y2="20"/></svg>
           Excel
         </button>
       </div>
     </div>
     <div id="import-content" class="hidden">
-      <p style="margin-bottom:16px;opacity:0.7;">Выберите файл для импорта (JSON или Excel)</p>
-      <input type="file" id="import-file" accept=".json,.xlsx,.xls" style="margin-bottom:12px;" />
+      <p style="margin-bottom:14px;opacity:0.6;font-size:14px;">Выберите файл для импорта (JSON или Excel)</p>
+      <input type="file" id="import-file" accept=".json,.xlsx,.xls" style="margin-bottom:10px;" />
       <button id="import-btn-main">
-        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>
+        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>
         Импортировать
       </button>
-      <button class="secondary" id="import-cancel-btn" style="margin-top:8px;">Отмена</button>
+      <button class="secondary" id="import-cancel-btn" style="margin-top:6px;">Отмена</button>
     </div>
-    <button class="secondary" id="export-close-btn" style="margin-top:12px;">Закрыть</button>
+    <button class="secondary" id="export-close-btn" style="margin-top:10px;">Закрыть</button>
   </div>
 </div>
 
@@ -259,7 +284,6 @@
   var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw';
   
   var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  var TEST_TELEGRAM_ID = "809839462";
   var telegramId = null;
   var currentSection = 'tasks';
   var currentLang = 'ru';
@@ -271,11 +295,10 @@
   // ============================================================
   var translations = {
     ru: {
-      tasks: 'ЗАДАЧИ', payments: 'ПЛАТЕЖИ', settings: 'НАСТРОЙКИ',
+      tasks: 'Задачи', payments: 'Платежи', settings: 'Настройки',
       title: 'Название', add: 'Добавить', search: 'Поиск...',
       share: 'Поделиться', create: 'Создать', cancel: 'Отмена',
-      close: 'Закрыть', save: 'Сохранить', delete: 'Удалить',
-      edit: 'Редактировать', loading: 'Загрузка...', no_data: 'Нет данных',
+      close: 'Закрыть', loading: 'Загрузка...', no_data: 'Нет данных',
       error: 'Ошибка',
       new_task: 'Новая задача', folder: 'Папка', priority: 'Приоритет',
       deadline: 'Дедлайн', tags: 'Теги (через запятую)',
@@ -301,15 +324,13 @@
       welcome: 'Добро пожаловать!', guest: 'Гость',
       sync: 'Синхр.', offline: 'Офлайн',
       dark: 'Тёмная', light: 'Светлая',
-      russian: 'Русский', english: 'English',
-      green: 'Зелёный', yellow: 'Жёлтый', red: 'Красный'
+      russian: 'Русский', english: 'English'
     },
     en: {
-      tasks: 'TASKS', payments: 'PAYMENTS', settings: 'SETTINGS',
+      tasks: 'Tasks', payments: 'Payments', settings: 'Settings',
       title: 'Title', add: 'Add', search: 'Search...',
       share: 'Share', create: 'Create', cancel: 'Cancel',
-      close: 'Close', save: 'Save', delete: 'Delete',
-      edit: 'Edit', loading: 'Loading...', no_data: 'No data',
+      close: 'Close', loading: 'Loading...', no_data: 'No data',
       error: 'Error',
       new_task: 'New Task', folder: 'Folder', priority: 'Priority',
       deadline: 'Deadline', tags: 'Tags (comma separated)',
@@ -335,8 +356,7 @@
       welcome: 'Welcome!', guest: 'Guest',
       sync: 'Sync', offline: 'Offline',
       dark: 'Dark', light: 'Light',
-      russian: 'Russian', english: 'English',
-      green: 'Green', yellow: 'Yellow', red: 'Red'
+      russian: 'Russian', english: 'English'
     }
   };
 
@@ -371,52 +391,43 @@
   }
 
   // ============================================================
-  // 4. АВТОРИЗАЦИЯ
+  // 4. АВТОРИЗАЦИЯ ЧЕРЕЗ TELEGRAM (БЕЗ ТЕСТОВОГО РЕЖИМА)
   // ============================================================
   function initTelegram() {
     try {
-      if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.ready();
-        var user = window.Telegram.WebApp.initDataUnsafe?.user;
-        if (user) {
-          telegramId = String(user.id);
-          userData = {
-            id: String(user.id),
-            username: user.username || user.first_name || t('guest'),
-            firstName: user.first_name || '',
-            lastName: user.last_name || '',
-            photoUrl: user.photo_url || null
-          };
-          isAuthorized = true;
-          return true;
-        }
+      // Проверяем, запущено ли в Telegram
+      if (typeof Telegram === 'undefined' || !Telegram.WebApp) {
+        console.warn('⚠️ Приложение запущено не в Telegram');
+        isAuthorized = false;
+        return false;
       }
-      isAuthorized = false;
-      return false;
+      
+      Telegram.WebApp.ready();
+      var user = Telegram.WebApp.initDataUnsafe?.user;
+      
+      if (!user) {
+        console.warn('⚠️ Пользователь не авторизован в Telegram');
+        isAuthorized = false;
+        return false;
+      }
+      
+      telegramId = String(user.id);
+      userData = {
+        id: String(user.id),
+        username: user.username || user.first_name || 'Пользователь',
+        firstName: user.first_name || '',
+        lastName: user.last_name || '',
+        photoUrl: user.photo_url || null
+      };
+      isAuthorized = true;
+      console.log('✅ Авторизован через Telegram:', userData.username);
+      return true;
+      
     } catch (e) {
+      console.error('❌ Ошибка авторизации:', e);
       isAuthorized = false;
       return false;
     }
-  }
-
-  function useTestMode() {
-    telegramId = TEST_TELEGRAM_ID;
-    userData = {
-      id: TEST_TELEGRAM_ID,
-      username: 'Тестовый пользователь',
-      firstName: 'Тест',
-      lastName: ''
-    };
-    isAuthorized = true;
-    updateUserUI();
-    showNavigation(true);
-    loadProfile().then(function() {
-      updateUI();
-      setupNavigation();
-      setupModal();
-      setupForms();
-      renderTasks();
-    });
   }
 
   // ============================================================
@@ -481,19 +492,21 @@
         <h2>${t('login_title')}</h2>
         <p>${t('login_desc')}</p>
         <button class="telegram-login" id="telegram-login-btn">
-          <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+          <svg class="icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
           ${t('login_btn')}
         </button>
-        <div style="font-size:12px;opacity:0.5;margin-top:20px;">
+        <div style="font-size:11px;opacity:0.4;margin-top:16px;">
           🔒 Данные синхронизируются через Telegram
         </div>
       </div>
     `;
+    
     document.getElementById('telegram-login-btn').onclick = function() {
-      if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.openLink('https://t.me/' + (window.Telegram.WebApp.initDataUnsafe?.user?.username || ''));
+      // Открываем Telegram для авторизации
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.openLink('https://t.me/' + (Telegram.WebApp.initDataUnsafe?.user?.username || ''));
       } else {
-        useTestMode();
+        alert('❌ Приложение должно быть открыто через Telegram');
       }
     };
   }
@@ -505,6 +518,7 @@
     try {
       if (!telegramId) return;
       setSyncStatus('loading');
+      
       var { data, error } = await supabaseClient
         .from('profiles')
         .select('*')
@@ -519,8 +533,17 @@
       if (!data) {
         var { error: insertError } = await supabaseClient
           .from('profiles')
-          .insert([{ telegram_id: telegramId, username: userData?.username || t('guest') }]);
-        if (insertError) { setSyncStatus('error'); return; }
+          .insert([{ 
+            telegram_id: telegramId, 
+            username: userData?.username || t('guest'),
+            language: 'ru',
+            theme: 'light'
+          }]);
+        if (insertError) { 
+          console.error('Ошибка создания профиля:', insertError);
+          setSyncStatus('error'); 
+          return; 
+        }
         setSyncStatus('ok');
         return;
       }
@@ -530,6 +553,7 @@
       else document.body.classList.remove('dark');
       setSyncStatus('ok');
     } catch (err) {
+      console.error('Ошибка загрузки профиля:', err);
       setSyncStatus('error');
     }
   }
@@ -580,7 +604,7 @@
         '<div class="flex-between">' +
           '<input type="text" id="search-tasks" placeholder="' + t('search') + '" />' +
           '<button id="add-task-btn-main">' +
-            '<svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+            '<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
             t('add') +
           '</button>' +
         '</div>';
@@ -604,17 +628,17 @@
             else if (diff < 3) cls = 'yellow';
           }
           var div = document.createElement('div');
-          div.className = 'task-item glass-card';
+          div.className = 'task-item';
           var tagsHtml = (task.tags && task.tags.length) ? 
             task.tags.map(function(tag) { return '<span class="tag">' + tag + '</span>'; }).join('') : '';
           div.innerHTML = 
             '<div><strong>' + task.title + '</strong>' + 
             (tagsHtml ? '<div class="flex-wrap" style="margin-top:4px;">' + tagsHtml + '</div>' : '') +
             '</div>' +
-            '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<div style="display:flex;align-items:center;gap:6px;">' +
               '<span class="deadline-indicator ' + cls + '"></span>' +
-              '<button class="icon-btn share-btn" data-type="task" data-id="' + task.id + '">' +
-                '<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
+              '<button class="icon-btn share-btn" data-type="task" data-id="' + task.id + '" title="Поделиться">' +
+                '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
               '</button>' +
             '</div>';
           content.appendChild(div);
@@ -624,13 +648,13 @@
         });
       } else {
         var empty = document.createElement('div');
-        empty.className = 'glass-card empty-state';
+        empty.className = 'empty-state';
         empty.textContent = t('no_tasks');
         content.appendChild(empty);
       }
     } catch (err) {
       console.error('Ошибка загрузки задач:', err);
-      content.innerHTML = '<div class="glass-card error-msg">' + t('error') + '</div>';
+      content.innerHTML = '<div class="error-msg">' + t('error') + '</div>';
     }
   }
 
@@ -655,7 +679,7 @@
         '<div class="flex-between">' +
           '<input type="text" id="search-payments" placeholder="' + t('search') + '" />' +
           '<button id="add-payment-btn-main">' +
-            '<svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
+            '<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
             t('add') +
           '</button>' +
         '</div>';
@@ -679,15 +703,15 @@
             else if (diff < 7) cls = 'yellow';
           }
           var div = document.createElement('div');
-          div.className = 'payment-item glass-card';
+          div.className = 'payment-item';
           div.innerHTML = 
             '<div><strong>' + p.title + '</strong>' +
-            (p.recurrence ? '<div style="font-size:12px;opacity:0.7;">' + getRecurrenceLabel(p.recurrence) + '</div>' : '') +
+            (p.recurrence ? '<div style="font-size:11px;opacity:0.6;">' + getRecurrenceLabel(p.recurrence) + '</div>' : '') +
             '</div>' +
-            '<div style="display:flex;align-items:center;gap:8px;">' +
+            '<div style="display:flex;align-items:center;gap:6px;">' +
               '<span class="deadline-indicator ' + cls + '"></span>' +
-              '<button class="icon-btn share-btn" data-type="payment" data-id="' + p.id + '">' +
-                '<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
+              '<button class="icon-btn share-btn" data-type="payment" data-id="' + p.id + '" title="Поделиться">' +
+                '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
               '</button>' +
             '</div>';
           content.appendChild(div);
@@ -697,13 +721,13 @@
         });
       } else {
         var empty = document.createElement('div');
-        empty.className = 'glass-card empty-state';
+        empty.className = 'empty-state';
         empty.textContent = t('no_payments');
         content.appendChild(empty);
       }
     } catch (err) {
       console.error('Ошибка загрузки платежей:', err);
-      content.innerHTML = '<div class="glass-card error-msg">' + t('error') + '</div>';
+      content.innerHTML = '<div class="error-msg">' + t('error') + '</div>';
     }
   }
 
@@ -815,7 +839,7 @@
         }
       }
 
-      if (!data.tasks && !data.payments) {
+      if ((!data.tasks || !data.tasks.length) && (!data.payments || !data.payments.length)) {
         alert(t('import_error'));
         return;
       }
@@ -864,34 +888,37 @@
     var content = document.getElementById('content');
     content.innerHTML = 
       '<div class="glass-card">' +
-        '<h3>' + t('settings_title') + '</h3>' +
-        '<div style="margin:12px 0;">' +
-          '<label style="display:block;margin-bottom:4px;">' + t('theme') + '</label>' +
-          '<button id="theme-toggle" style="width:100%;">' +
-            '<svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>' +
-            ' ' + (document.body.classList.contains('dark') ? t('light') : t('dark')) +
+        '<h3 style="margin-bottom:16px;">' + t('settings_title') + '</h3>' +
+        
+        '<div class="settings-row">' +
+          '<label>' + t('theme') + '</label>' +
+          '<button id="theme-toggle" class="secondary" style="padding:6px 16px;font-size:13px;">' +
+            (document.body.classList.contains('dark') ? '🌙 ' + t('dark') : '☀️ ' + t('light')) +
           '</button>' +
         '</div>' +
-        '<div style="margin:12px 0;">' +
-          '<label style="display:block;margin-bottom:4px;">' + t('language') + '</label>' +
-          '<select id="lang-select" style="width:100%;">' +
+        
+        '<div class="settings-row">' +
+          '<label>' + t('language') + '</label>' +
+          '<select id="lang-select" style="width:auto;padding:6px 12px;font-size:13px;">' +
             '<option value="ru" ' + (currentLang === 'ru' ? 'selected' : '') + '>' + t('russian') + '</option>' +
             '<option value="en" ' + (currentLang === 'en' ? 'selected' : '') + '>' + t('english') + '</option>' +
           '</select>' +
         '</div>' +
-        '<hr style="margin:16px 0;opacity:0.2;">' +
-        '<div style="margin:12px 0;">' +
-          '<button id="settings-export-btn" style="width:100%;margin-bottom:8px;">' +
-            '<svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>' +
+        
+        '<hr style="margin:12px 0;opacity:0.1;">' +
+        
+        '<div style="display:flex;gap:10px;margin-top:8px;">' +
+          '<button id="settings-export-btn" style="flex:1;">' +
+            '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>' +
             ' ' + t('export') +
           '</button>' +
-          '<button id="settings-import-btn" style="width:100%;">' +
-            '<svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>' +
+          '<button id="settings-import-btn" style="flex:1;">' +
+            '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>' +
             ' ' + t('import') +
           '</button>' +
         '</div>' +
-        '<hr style="margin:16px 0;opacity:0.2;">' +
-        '<div style="font-size:12px;opacity:0.5;">👤 ID: ' + telegramId + '</div>' +
+        
+        '<div style="font-size:11px;opacity:0.4;margin-top:16px;">👤 ID: ' + telegramId + '</div>' +
       '</div>';
 
     document.getElementById('theme-toggle').onclick = toggleTheme;
@@ -945,7 +972,6 @@
       if (e.target === this) this.style.display = 'none';
     };
     
-    // Кнопки экспорта/импорта
     document.getElementById('export-json-btn').onclick = function() { exportData('json'); };
     document.getElementById('export-excel-btn').onclick = function() { exportData('excel'); };
     document.getElementById('import-btn-main').onclick = importData;
@@ -1033,11 +1059,14 @@
     showNavigation(false);
     
     var hasTelegram = initTelegram();
+    
+    // Если не в Telegram - показываем экран входа
     if (!hasTelegram || !telegramId) {
       renderLoginScreen();
       return;
     }
     
+    // Авторизован - загружаем данные
     showNavigation(true);
     updateUserUI();
     loadProfile().then(function() {
