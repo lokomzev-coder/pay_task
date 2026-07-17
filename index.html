@@ -1,1091 +1,610 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Task Tracker</title>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-  <script src="https://unpkg.com/@twa-dev/sdk"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
-  <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
-  
-  <style>
-    :root {
-      --bg-primary: #f0f4f8;
-      --bg-secondary: rgba(255, 255, 255, 0.7);
-      --text-primary: #2a3b4d;
-      --accent: #6c5ce7;
-      --success: #00b894;
-      --warning: #fdcb6e;
-      --danger: #ff7675;
-      --border-radius: 12px;
-      --glass-bg: rgba(255, 255, 255, 0.1);
-      --glass-border: rgba(255, 255, 255, 0.15);
-      --glass-shadow: 0 4px 16px rgba(31, 38, 135, 0.08);
-      --font-family: 'Nunito', sans-serif;
-    }
-
-    .dark {
-      --bg-primary: #0d1224;
-      --bg-secondary: rgba(30, 30, 46, 0.7);
-      --text-primary: #e0e0ff;
-      --glass-bg: rgba(30, 30, 46, 0.2);
-      --glass-border: rgba(255, 255, 255, 0.06);
-      --glass-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--font-family); transition: background-color 0.3s ease, color 0.3s ease; }
-    body { background: var(--bg-primary); color: var(--text-primary); min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
-    .container { max-width: 1200px; width: 100%; margin: 0 auto; padding: 16px 20px 80px 20px; }
-    .glass-card { background: var(--glass-bg); backdrop-filter: blur(8px); border: 1px solid var(--glass-border); border-radius: var(--border-radius); box-shadow: var(--glass-shadow); padding: 20px; margin-bottom: 16px; }
-    header { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; }
-    header h1 { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-    header .icon { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; }
-    
-    .nav-mobile { position: fixed; bottom: 0; left: 0; right: 0; display: none; justify-content: space-around; padding: 12px; background: var(--glass-bg); backdrop-filter: blur(12px); border-top: 1px solid var(--glass-border); z-index: 100; }
-    .nav-btn { background: none; border: none; color: var(--text-primary); font-size: 0.65rem; cursor: pointer; padding: 4px 8px; border-radius: 8px; font-weight: 600; display: flex; flex-direction: column; align-items: center; gap: 2px; opacity: 0.6; }
-    .nav-btn .icon { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
-    .nav-btn.active { opacity: 1; color: var(--accent); }
-    .nav-btn.active .icon { stroke: var(--accent); }
-    
-    .desktop-nav { 
-      display: none; 
-      flex-direction: column; 
-      width: 56px; 
-      padding: 12px 8px; 
-      position: fixed; 
-      top: 50%;
-      left: 16px;
-      transform: translateY(-50%);
-      background: var(--glass-bg); 
-      backdrop-filter: blur(12px); 
-      border: 1px solid var(--glass-border); 
-      border-radius: 16px;
-      z-index: 50;
-      gap: 4px;
-      box-shadow: var(--glass-shadow);
-    }
-    .desktop-nav.visible { display: flex; }
-    .desktop-nav .nav-btn { 
-      flex-direction: column; 
-      align-items: center;
-      gap: 2px; 
-      padding: 8px 4px; 
-      font-size: 0.55rem;
-      width: 100%;
-      border-radius: 10px;
-      opacity: 0.5;
-      transition: all 0.2s;
-    }
-    .desktop-nav .nav-btn:hover { opacity: 0.8; background: var(--glass-bg); }
-    .desktop-nav .nav-btn .icon { width: 20px; height: 20px; }
-    .desktop-nav .nav-btn.active { opacity: 1; background: var(--accent); color: white; }
-    .desktop-nav .nav-btn.active .icon { stroke: white; }
-    
-    main { padding-top: 8px; }
-    main.full-width { margin-left: 0; }
-    main.with-nav { margin-left: 72px; }
-    
-    @media (min-width: 768px) { 
-      .nav-mobile { display: none !important; } 
-      .desktop-nav.visible { display: flex; }
-      main.with-nav { margin-left: 72px; }
-      .container { padding: 16px 24px 20px 24px; }
-    }
-    @media (max-width: 767px) {
-      .desktop-nav { display: none !important; }
-      main.with-nav { margin-left: 0; }
-      main.full-width { margin-left: 0; }
-      .nav-mobile { display: flex !important; }
-    }
-
-    .task-item, .payment-item { padding: 12px 16px; border-radius: 10px; margin: 6px 0; display: flex; justify-content: space-between; align-items: center; background: var(--bg-secondary); border: 1px solid var(--glass-border); }
-    .deadline-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-left: 8px; }
-    .green { background: var(--success); }
-    .yellow { background: var(--warning); }
-    .red { background: var(--danger); }
-    
-    input, select, button { padding: 10px 14px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--bg-secondary); color: var(--text-primary); margin: 4px 0; font-size: 15px; width: 100%; outline: none; }
-    input:focus, select:focus { border-color: var(--accent); }
-    button { background: var(--accent); color: white; cursor: pointer; border: none; font-weight: 600; padding: 10px 20px; width: auto; display: inline-flex; align-items: center; gap: 8px; justify-content: center; border-radius: 10px; }
-    button .icon { width: 18px; height: 18px; stroke: white; fill: none; stroke-width: 2; }
-    button.secondary { background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--glass-border); }
-    button.secondary .icon { stroke: var(--text-primary); }
-    
-    .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 200; justify-content: center; align-items: center; }
-    .modal-content { width: 90%; max-width: 460px; padding: 24px; border-radius: var(--border-radius); background: var(--bg-secondary); box-shadow: var(--glass-shadow); backdrop-filter: blur(12px); max-height: 90vh; overflow-y: auto; border: 1px solid var(--glass-border); }
-    .hidden { display: none !important; }
-    .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-    .flex-between input { flex: 1; }
-    .flex-between button { width: auto; }
-    
-    .loading { text-align: center; padding: 40px; font-size: 16px; opacity: 0.6; }
-    .empty-state { text-align: center; padding: 30px; color: var(--text-primary); opacity: 0.5; font-size: 14px; }
-    .error-msg { background: var(--danger); color: white; padding: 14px; border-radius: var(--border-radius); text-align: center; }
-    .user-badge { display: flex; align-items: center; gap: 8px; font-size: 13px; opacity: 0.8; }
-    .user-badge .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; }
-    .sync-status { font-size: 11px; padding: 3px 10px; border-radius: 20px; background: var(--success); color: white; display: inline-block; }
-    .sync-status.offline { background: var(--danger); }
-    .sync-status.loading { background: var(--warning); color: #333; }
-    
-    .icon-btn { background: none; border: none; cursor: pointer; padding: 4px 6px; display: inline-flex; align-items: center; border-radius: 8px; }
-    .icon-btn:hover { background: var(--glass-bg); }
-    .icon-btn .icon { width: 20px; height: 20px; stroke: var(--text-primary); fill: none; stroke-width: 2; }
-    
-    .export-options { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
-    .export-options button { flex: 1; min-width: 80px; }
-    .tag { display: inline-block; background: var(--glass-bg); padding: 2px 10px; border-radius: 12px; font-size: 11px; margin: 2px; border: 1px solid var(--glass-border); }
-    .flex-wrap { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-    
-    .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--glass-border); }
-    .settings-row:last-child { border-bottom: none; }
-    .settings-row label { font-size: 14px; font-weight: 600; }
-    .settings-row select, .settings-row button { width: auto; margin: 0; }
-
-    .auth-loading { text-align: center; padding: 60px 20px; }
-    .auth-loading .spinner { width: 40px; height: 40px; border: 4px solid var(--glass-border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .auth-loading p { opacity: 0.6; font-size: 14px; }
-
-    .user-id-display { font-size: 11px; opacity: 0.4; padding: 2px 10px; background: var(--glass-bg); border-radius: 20px; border: 1px solid var(--glass-border); }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Task Tracker</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.0/dist/umd/supabase.min.js"></script>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --surface: #1a1d27;
+            --surface2: #22252f;
+            --border: #2a2d38;
+            --text: #e1e4ed;
+            --text2: #9ca0b0;
+            --accent: #5b8def;
+            --accent-hover: #4a7de0;
+            --red: #e0556a;
+            --red-bg: rgba(224,85,106,0.12);
+            --yellow: #e5c07b;
+            --yellow-bg: rgba(229,192,123,0.12);
+            --green: #8ccf7e;
+            --green-bg: rgba(140,207,126,0.12);
+            --priority-high: #e0556a;
+            --priority-mid: #e5c07b;
+            --priority-low: #8ccf7e;
+            --radius: 8px;
+            --radius-sm: 5px;
+            --transition: 0.15s ease;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .app { max-width:960px; margin:0 auto; padding:24px 16px 60px; }
+        .header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--border); }
+        .header h1 { font-size:1.4rem; font-weight:700; }
+        .header-stats { display:flex; gap:12px; font-size:0.82rem; color:var(--text2); }
+        .header-stats span { background:var(--surface2); padding:4px 10px; border-radius:20px; white-space:nowrap; }
+        .header-stats .done { color:var(--green); }
+        .sync-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; padding:10px 14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); font-size:0.8rem; color:var(--text2); }
+        .sync-bar .status { margin-left:auto; display:flex; align-items:center; gap:4px; }
+        .saved { color:var(--green); }
+        .pending { color:var(--yellow); }
+        .btn-sm { padding:6px 14px; border-radius:16px; border:1px solid var(--border); background:var(--surface2); color:var(--text); cursor:pointer; font-size:0.78rem; font-family:inherit; transition:var(--transition); white-space:nowrap; }
+        .btn-sm:hover { border-color:var(--accent); color:var(--accent); }
+        .btn-sm.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
+        .filter-btn { padding:6px 12px; border-radius:20px; font-size:0.8rem; border:1px solid var(--border); background:var(--surface); color:var(--text2); cursor:pointer; transition:var(--transition); white-space:nowrap; }
+        .filter-btn:hover { border-color:var(--accent); color:var(--text); }
+        .filter-btn.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+        .filter-btn.urgent { border-color:var(--red); color:var(--red); }
+        .filter-btn.urgent.active { background:var(--red); color:#fff; }
+        .block { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:12px; overflow:hidden; }
+        .block-header { display:flex; align-items:center; gap:10px; padding:12px 16px; cursor:pointer; background:var(--surface2); border-bottom:1px solid transparent; }
+        .block.open .block-header { border-bottom-color:var(--border); }
+        .block-header:hover { background:#252834; }
+        .block-icon { font-size:1rem; }
+        .block-title { flex:1; font-weight:600; font-size:0.9rem; display:flex; align-items:center; gap:8px; }
+        .block-counter { font-size:0.7rem; color:var(--text2); background:var(--surface); padding:2px 8px; border-radius:12px; }
+        .block-arrow { transition:transform 0.2s; font-size:0.65rem; color:var(--text2); }
+        .block.open .block-arrow { transform:rotate(90deg); }
+        .block-body { display:none; }
+        .block.open .block-body { display:block; }
+        .task-list { list-style:none; }
+        .task-item { display:flex; align-items:flex-start; gap:8px; padding:10px 16px; border-bottom:1px solid var(--border); }
+        .task-item:last-child { border-bottom:none; }
+        .task-item.completed .task-text { text-decoration:line-through; color:var(--text2); opacity:0.6; }
+        .task-item.completed { background:rgba(140,207,126,0.03); }
+        .priority-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; margin-top:6px; }
+        .priority-high { background:var(--priority-high); box-shadow:0 0 6px var(--priority-high); }
+        .priority-mid { background:var(--priority-mid); box-shadow:0 0 6px var(--priority-mid); }
+        .priority-low { background:var(--priority-low); box-shadow:0 0 4px var(--priority-low); }
+        .task-check { width:18px; height:18px; border-radius:4px; border:2px solid var(--border); flex-shrink:0; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:10px; transition:var(--transition); background:transparent; color:transparent; }
+        .task-check:hover { border-color:var(--green); }
+        .task-item.completed .task-check { background:var(--green); border-color:var(--green); color:#000; }
+        .task-content { flex:1; min-width:0; }
+        .task-text { font-size:0.85rem; word-break:break-word; }
+        .task-meta { font-size:0.7rem; color:var(--text2); margin-top:2px; display:flex; gap:6px; flex-wrap:wrap; }
+        .task-meta .tag { background:var(--surface2); padding:1px 6px; border-radius:10px; font-size:0.65rem; }
+        .tag.gmail { background:var(--red-bg); color:var(--red); }
+        .tag.timeweb { background:var(--yellow-bg); color:var(--yellow); }
+        .tag.yandex { background:var(--green-bg); color:var(--green); }
+        .task-actions { display:flex; gap:2px; flex-shrink:0; opacity:0; transition:opacity 0.15s; }
+        .task-item:hover .task-actions { opacity:1; }
+        .btn-icon { width:26px; height:26px; border-radius:var(--radius-sm); border:none; cursor:pointer; font-size:0.75rem; display:flex; align-items:center; justify-content:center; background:transparent; color:var(--text2); }
+        .btn-icon:hover { background:var(--surface2); color:var(--text); }
+        .btn-icon.del:hover { background:var(--red-bg); color:var(--red); }
+        .add-section { margin-top:16px; text-align:center; }
+        .btn-add { padding:10px 24px; border-radius:20px; border:1px dashed var(--border); background:transparent; color:var(--text2); cursor:pointer; font-size:0.9rem; font-family:inherit; }
+        .btn-add:hover { border-color:var(--accent); color:var(--accent); background:rgba(91,141,239,0.05); }
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); display:flex; align-items:center; justify-content:center; z-index:100; backdrop-filter:blur(3px); }
+        .modal { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:20px; width:90%; max-width:460px; max-height:85vh; overflow-y:auto; }
+        .modal h3 { margin-bottom:14px; font-size:1rem; }
+        .modal label { display:block; font-size:0.75rem; color:var(--text2); margin-bottom:3px; margin-top:10px; }
+        .modal input,.modal textarea,.modal select { width:100%; padding:9px 11px; background:var(--bg); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text); font-family:inherit; font-size:0.85rem; resize:vertical; }
+        .modal textarea { min-height:60px; }
+        .modal input:focus,.modal textarea:focus,.modal select:focus { outline:none; border-color:var(--accent); }
+        .modal-actions { display:flex; gap:8px; margin-top:16px; justify-content:flex-end; }
+        .btn { padding:8px 18px; border-radius:var(--radius-sm); border:none; cursor:pointer; font-size:0.85rem; font-family:inherit; }
+        .btn-save { background:var(--accent); color:#fff; }
+        .btn-save:hover { background:var(--accent-hover); }
+        .btn-cancel { background:var(--surface2); color:var(--text); }
+        .search-box { width:100%; padding:9px 13px; background:var(--surface); border:1px solid var(--border); border-radius:22px; color:var(--text); font-size:0.85rem; margin-bottom:14px; font-family:inherit; }
+        .search-box:focus { outline:none; border-color:var(--accent); }
+        .hidden { display:none !important; }
+        .user-id { font-size:0.7rem; color:var(--text2); opacity:0.5; padding:2px 10px; background:var(--surface2); border-radius:20px; }
+        @media (max-width:600px) { .task-actions { opacity:1; } }
+    </style>
 </head>
-<body class="light">
-
-<div class="container">
-  <header id="app-header">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <h1>
-        <svg class="icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-        Tracker
-      </h1>
-      <span class="sync-status" id="sync-status">Синхр.</span>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span class="user-id-display" id="user-id-display">⏳</span>
-      <div class="user-badge" id="user-badge">
-        <span id="user-name">Гость</span>
-        <div class="avatar" id="user-avatar">👤</div>
-      </div>
-      <button class="icon-btn" id="settings-btn">
-        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </button>
-    </div>
-  </header>
-
-  <div class="desktop-nav" id="desktop-nav">
-    <button class="nav-btn active" data-section="tasks" title="Задачи">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-      <span>Задачи</span>
-    </button>
-    <button class="nav-btn" data-section="payments" title="Платежи">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-      <span>Платежи</span>
-    </button>
-    <button class="nav-btn" data-section="settings" title="Настройки">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      <span>Настройки</span>
-    </button>
-  </div>
-
-  <main id="content" class="full-width">
-    <div class="auth-loading">
-      <div class="spinner"></div>
-      <p>⏳ Получение данных пользователя...</p>
-    </div>
-  </main>
-</div>
-
-<div class="nav-mobile" id="nav-mobile">
-  <button class="nav-btn active" data-section="tasks">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-    <span>Задачи</span>
-  </button>
-  <button class="nav-btn" data-section="payments">
-    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-    <span>Платежи</span>
-  </button>
-</div>
-
-<div class="modal" id="modal">
-  <div class="modal-content">
-    <h3 id="modal-title" style="margin-bottom:12px;">Новая задача</h3>
-    <form id="modal-form">
-      <input type="text" id="item-title" placeholder="Название" required />
-      <select id="item-folder"><option value="">Без папки</option></select>
-      <select id="item-priority">
-        <option value="low">Низкий</option>
-        <option value="medium">Средний</option>
-        <option value="high">Высокий</option>
-      </select>
-      <input type="date" id="item-deadline" />
-      <input type="text" id="item-tags" placeholder="Теги (через запятую)" />
-      <button type="submit">
-        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Создать
-      </button>
-    </form>
-    <form id="modal-form-payment" class="hidden">
-      <input type="text" id="payment-title" placeholder="Название" required />
-      <input type="date" id="payment-due-date" required />
-      <select id="payment-recurrence">
-        <option value="1m">1 месяц</option>
-        <option value="2m">2 месяца</option>
-        <option value="3m">3 месяца</option>
-        <option value="6m">6 месяцев</option>
-        <option value="1y">1 год</option>
-      </select>
-      <button type="submit">
-        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Создать
-      </button>
-    </form>
-  </div>
-</div>
-
-<div class="modal" id="export-modal">
-  <div class="modal-content">
-    <h3 id="export-title" style="margin-bottom:12px;">Экспорт данных</h3>
-    <div id="export-content">
-      <p style="margin-bottom:14px;opacity:0.6;font-size:14px;">Выберите формат для экспорта данных</p>
-      <div class="export-options">
-        <button id="export-json-btn">
-          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>
-          JSON
-        </button>
-        <button id="export-excel-btn">
-          <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="16" x2="16" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="20" x2="13" y2="20"/></svg>
-          Excel
-        </button>
-      </div>
-    </div>
-    <div id="import-content" class="hidden">
-      <p style="margin-bottom:14px;opacity:0.6;font-size:14px;">Выберите файл для импорта (JSON или Excel)</p>
-      <input type="file" id="import-file" accept=".json,.xlsx,.xls" style="margin-bottom:10px;" />
-      <button id="import-btn-main">
-        <svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>
-        Импортировать
-      </button>
-      <button class="secondary" id="import-cancel-btn" style="margin-top:6px;">Отмена</button>
-    </div>
-    <button class="secondary" id="export-close-btn" style="margin-top:10px;">Закрыть</button>
-  </div>
-</div>
-
-<script>
-  // ============================================================
-  // 1. КОНФИГУРАЦИЯ
-  // ============================================================
-  var SUPABASE_URL = 'https://lzwbdobhodwdmjzcmdjs.supabase.co';
-  var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw';
-  
-  var supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  var telegramId = null;
-  var currentSection = 'tasks';
-  var currentLang = 'ru';
-  var userData = null;
-
-  // ============================================================
-  // 2. ПЕРЕВОДЫ
-  // ============================================================
-  var translations = {
-    ru: {
-      tasks: 'Задачи', payments: 'Платежи', settings: 'Настройки',
-      title: 'Название', add: 'Добавить', search: 'Поиск...',
-      share: 'Поделиться', create: 'Создать', cancel: 'Отмена',
-      close: 'Закрыть', loading: 'Загрузка...', no_data: 'Нет данных',
-      error: 'Ошибка',
-      new_task: 'Новая задача', folder: 'Папка', priority: 'Приоритет',
-      deadline: 'Дедлайн', tags: 'Теги (через запятую)',
-      no_tasks: 'Нет задач', low: 'Низкий', medium: 'Средний',
-      high: 'Высокий', no_folder: 'Без папки',
-      new_payment: 'Новый платёж', due_date: 'Дата оплаты',
-      recurrence: 'Периодичность', no_payments: 'Нет платежей',
-      '1m': '1 месяц', '2m': '2 месяца', '3m': '3 месяца',
-      '6m': '6 месяцев', '1y': '1 год',
-      settings_title: 'Настройки', theme: 'Тема', language: 'Язык',
-      export: 'Экспорт', import: 'Импорт',
-      export_title: 'Экспорт данных', import_title: 'Импорт данных',
-      export_success: 'Экспорт выполнен успешно!',
-      import_success: 'Импорт выполнен успешно!',
-      import_error: 'Ошибка импорта. Проверьте формат файла.',
-      select_file: 'Выберите файл...',
-      sync: 'Синхр.', offline: 'Офлайн',
-      dark: 'Тёмная', light: 'Светлая',
-      russian: 'Русский', english: 'English'
-    },
-    en: {
-      tasks: 'Tasks', payments: 'Payments', settings: 'Settings',
-      title: 'Title', add: 'Add', search: 'Search...',
-      share: 'Share', create: 'Create', cancel: 'Cancel',
-      close: 'Close', loading: 'Loading...', no_data: 'No data',
-      error: 'Error',
-      new_task: 'New Task', folder: 'Folder', priority: 'Priority',
-      deadline: 'Deadline', tags: 'Tags (comma separated)',
-      no_tasks: 'No tasks', low: 'Low', medium: 'Medium',
-      high: 'High', no_folder: 'No folder',
-      new_payment: 'New Payment', due_date: 'Due Date',
-      recurrence: 'Recurrence', no_payments: 'No payments',
-      '1m': '1 month', '2m': '2 months', '3m': '3 months',
-      '6m': '6 months', '1y': '1 year',
-      settings_title: 'Settings', theme: 'Theme', language: 'Language',
-      export: 'Export', import: 'Import',
-      export_title: 'Export Data', import_title: 'Import Data',
-      export_success: 'Export successful!',
-      import_success: 'Import successful!',
-      import_error: 'Import error. Check file format.',
-      select_file: 'Select file...',
-      sync: 'Sync', offline: 'Offline',
-      dark: 'Dark', light: 'Light',
-      russian: 'Russian', english: 'English'
-    }
-  };
-
-  function t(key) { return translations[currentLang]?.[key] || key; }
-  function getRecurrenceLabel(key) { return t(key) || key; }
-
-  // ============================================================
-  // 3. УПРАВЛЕНИЕ НАВИГАЦИЕЙ
-  // ============================================================
-  function showNavigation(show) {
-    var desktopNav = document.getElementById('desktop-nav');
-    var mainContent = document.getElementById('content');
-    var navMobile = document.getElementById('nav-mobile');
-    
-    if (show) {
-      if (window.innerWidth >= 768) {
-        desktopNav.classList.add('visible');
-        mainContent.classList.remove('full-width');
-        mainContent.classList.add('with-nav');
-      } else {
-        desktopNav.classList.remove('visible');
-        mainContent.classList.remove('with-nav');
-        mainContent.classList.add('full-width');
-      }
-      if (navMobile) navMobile.style.display = 'flex';
-    } else {
-      desktopNav.classList.remove('visible');
-      mainContent.classList.remove('with-nav');
-      mainContent.classList.add('full-width');
-      if (navMobile) navMobile.style.display = 'none';
-    }
-  }
-
-  // ============================================================
-  // 4. ПОЛУЧЕНИЕ ID ИЗ TELEGRAM
-  // ============================================================
-  function getTelegramId() {
-    try {
-      // Проверяем наличие Telegram WebApp
-      if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-        Telegram.WebApp.ready();
-        
-        // Способ 1: из initDataUnsafe
-        var initData = Telegram.WebApp.initDataUnsafe;
-        if (initData && initData.user) {
-          return String(initData.user.id);
-        }
-        
-        // Способ 2: парсим initData строку
-        var rawData = Telegram.WebApp.initData;
-        if (rawData) {
-          var params = new URLSearchParams(rawData);
-          var userStr = params.get('user');
-          if (userStr) {
-            try {
-              var user = JSON.parse(decodeURIComponent(userStr));
-              if (user && user.id) {
-                return String(user.id);
-              }
-            } catch (e) {}
-          }
-        }
-      }
-      return null;
-    } catch (e) {
-      console.log('Ошибка получения Telegram ID:', e);
-      return null;
-    }
-  }
-
-  // ============================================================
-  // 5. UI ФУНКЦИИ
-  // ============================================================
-  function updateUserUI() {
-    var idDisplay = document.getElementById('user-id-display');
-    var nameEl = document.getElementById('user-name');
-    var avatarEl = document.getElementById('user-avatar');
-    
-    if (!telegramId) {
-      idDisplay.textContent = '⏳';
-      nameEl.textContent = 'Гость';
-      avatarEl.textContent = '👤';
-      return;
-    }
-    
-    idDisplay.textContent = '🟢';
-    
-    if (userData && userData.username) {
-      nameEl.textContent = userData.username;
-      var letter = userData.username[0].toUpperCase();
-      avatarEl.textContent = letter;
-    } else {
-      nameEl.textContent = 'Пользователь';
-      avatarEl.textContent = '👤';
-    }
-  }
-
-  function setSyncStatus(status) {
-    var el = document.getElementById('sync-status');
-    if (!el) return;
-    if (status === 'ok') {
-      el.textContent = '✅ ' + t('sync');
-      el.className = 'sync-status';
-    } else if (status === 'loading') {
-      el.textContent = '⏳ ' + t('sync') + '...';
-      el.className = 'sync-status loading';
-    } else {
-      el.textContent = '📴 ' + t('offline');
-      el.className = 'sync-status offline';
-    }
-  }
-
-  function updateUI() {
-    document.querySelectorAll('.nav-btn').forEach(function(btn) {
-      var section = btn.dataset.section;
-      var span = btn.querySelector('span');
-      if (span) {
-        if (section === 'tasks') span.textContent = t('tasks');
-        else if (section === 'payments') span.textContent = t('payments');
-        else if (section === 'settings') span.textContent = t('settings');
-      }
-    });
-    document.getElementById('modal-title').textContent = 
-      currentSection === 'tasks' ? t('new_task') : t('new_payment');
-    document.getElementById('item-title').placeholder = t('title');
-    document.getElementById('item-tags').placeholder = t('tags');
-  }
-
-  // ============================================================
-  // 6. ПРОФИЛЬ
-  // ============================================================
-  async function loadProfile() {
-    try {
-      if (!telegramId) {
-        console.error('❌ Нет ID');
-        return;
-      }
-      
-      setSyncStatus('loading');
-      console.log('📡 Загрузка профиля для ID:', telegramId);
-      
-      var { data, error } = await supabaseClient
-        .from('profiles')
-        .select('*')
-        .eq('telegram_id', telegramId)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('❌ Ошибка запроса профиля:', error);
-        setSyncStatus('error');
-        return;
-      }
-
-      if (!data) {
-        console.log('🆕 Создание профиля для ID:', telegramId);
-        
-        var username = 'Пользователь';
-        try {
-          if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-            var user = Telegram.WebApp.initDataUnsafe?.user;
-            if (user) {
-              username = user.username || user.first_name || 'Пользователь';
-            }
-          }
-        } catch (e) {}
-        
-        var { error: insertError } = await supabaseClient
-          .from('profiles')
-          .insert([{ 
-            telegram_id: telegramId, 
-            username: username,
-            language: 'ru',
-            theme: 'light'
-          }]);
-        if (insertError) { 
-          console.error('❌ Ошибка создания профиля:', insertError);
-          setSyncStatus('error'); 
-          return; 
-        }
-        console.log('✅ Профиль создан');
-        setSyncStatus('ok');
-        return;
-      }
-
-      currentLang = data.language || 'ru';
-      if (data.theme === 'dark') document.body.classList.add('dark');
-      else document.body.classList.remove('dark');
-      
-      userData = data;
-      console.log('✅ Профиль загружен, язык:', currentLang);
-      setSyncStatus('ok');
-    } catch (err) {
-      console.error('❌ Ошибка загрузки профиля:', err);
-      setSyncStatus('error');
-    }
-  }
-
-  // ============================================================
-  // 7. ЗАГРУЗКА ПАПОК
-  // ============================================================
-  async function loadFolders() {
-    try {
-      if (!telegramId) return;
-      var { data, error } = await supabaseClient
-        .from('folders')
-        .select('id, name')
-        .eq('telegram_id', telegramId);
-      if (error) throw error;
-      var select = document.getElementById('item-folder');
-      select.innerHTML = '<option value="">' + t('no_folder') + '</option>';
-      if (data && data.length) {
-        data.forEach(function(f) {
-          var opt = document.createElement('option');
-          opt.value = f.id;
-          opt.textContent = f.name;
-          select.appendChild(opt);
-        });
-      }
-    } catch (err) {
-      console.error('Ошибка загрузки папок:', err);
-    }
-  }
-
-  // ============================================================
-  // 8. ЗАДАЧИ
-  // ============================================================
-  async function renderTasks() {
-    var content = document.getElementById('content');
-    content.innerHTML = '<div class="loading">' + t('loading') + '</div>';
-
-    try {
-      var { data, error } = await supabaseClient
-        .from('tasks')
-        .select('*')
-        .eq('telegram_id', telegramId);
-      if (error) throw error;
-      content.innerHTML = '';
-
-      var header = document.createElement('div');
-      header.className = 'glass-card';
-      header.innerHTML = 
-        '<div class="flex-between">' +
-          '<input type="text" id="search-tasks" placeholder="' + t('search') + '" />' +
-          '<button id="add-task-btn-main">' +
-            '<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
-            t('add') +
-          '</button>' +
-        '</div>';
-      content.appendChild(header);
-
-      document.getElementById('add-task-btn-main').onclick = function() { openForm('tasks'); };
-      document.getElementById('search-tasks').oninput = function() {
-        var f = this.value.toLowerCase();
-        document.querySelectorAll('.task-item').forEach(function(el) {
-          el.style.display = el.textContent.toLowerCase().includes(f) ? '' : 'none';
-        });
-      };
-
-      if (data && data.length) {
-        data.forEach(function(task) {
-          var due = task.deadline ? new Date(task.deadline) : null;
-          var cls = 'green';
-          if (due) {
-            var diff = (due - new Date()) / (1000*60*60*24);
-            if (diff < 1) cls = 'red';
-            else if (diff < 3) cls = 'yellow';
-          }
-          var div = document.createElement('div');
-          div.className = 'task-item';
-          var tagsHtml = (task.tags && task.tags.length) ? 
-            task.tags.map(function(tag) { return '<span class="tag">' + tag + '</span>'; }).join('') : '';
-          div.innerHTML = 
-            '<div><strong>' + task.title + '</strong>' + 
-            (tagsHtml ? '<div class="flex-wrap" style="margin-top:4px;">' + tagsHtml + '</div>' : '') +
-            '</div>' +
-            '<div style="display:flex;align-items:center;gap:6px;">' +
-              '<span class="deadline-indicator ' + cls + '"></span>' +
-              '<button class="icon-btn share-btn" data-type="task" data-id="' + task.id + '" title="Поделиться">' +
-                '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
-              '</button>' +
-            '</div>';
-          content.appendChild(div);
-          div.querySelector('.share-btn').onclick = function() {
-            shareItem(this.dataset.type, this.dataset.id);
-          };
-        });
-      } else {
-        var empty = document.createElement('div');
-        empty.className = 'empty-state';
-        empty.textContent = t('no_tasks');
-        content.appendChild(empty);
-      }
-    } catch (err) {
-      console.error('Ошибка загрузки задач:', err);
-      content.innerHTML = '<div class="error-msg">' + t('error') + '</div>';
-    }
-  }
-
-  // ============================================================
-  // 9. ПЛАТЕЖИ
-  // ============================================================
-  async function renderPayments() {
-    var content = document.getElementById('content');
-    content.innerHTML = '<div class="loading">' + t('loading') + '</div>';
-
-    try {
-      var { data, error } = await supabaseClient
-        .from('payments')
-        .select('*')
-        .eq('telegram_id', telegramId);
-      if (error) throw error;
-      content.innerHTML = '';
-
-      var header = document.createElement('div');
-      header.className = 'glass-card';
-      header.innerHTML = 
-        '<div class="flex-between">' +
-          '<input type="text" id="search-payments" placeholder="' + t('search') + '" />' +
-          '<button id="add-payment-btn-main">' +
-            '<svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>' +
-            t('add') +
-          '</button>' +
-        '</div>';
-      content.appendChild(header);
-
-      document.getElementById('add-payment-btn-main').onclick = function() { openForm('payments'); };
-      document.getElementById('search-payments').oninput = function() {
-        var f = this.value.toLowerCase();
-        document.querySelectorAll('.payment-item').forEach(function(el) {
-          el.style.display = el.textContent.toLowerCase().includes(f) ? '' : 'none';
-        });
-      };
-
-      if (data && data.length) {
-        data.forEach(function(p) {
-          var due = p.due_date ? new Date(p.due_date) : null;
-          var cls = 'green';
-          if (due) {
-            var diff = (due - new Date()) / (1000*60*60*24);
-            if (diff < 2) cls = 'red';
-            else if (diff < 7) cls = 'yellow';
-          }
-          var div = document.createElement('div');
-          div.className = 'payment-item';
-          div.innerHTML = 
-            '<div><strong>' + p.title + '</strong>' +
-            (p.recurrence ? '<div style="font-size:11px;opacity:0.6;">' + getRecurrenceLabel(p.recurrence) + '</div>' : '') +
-            '</div>' +
-            '<div style="display:flex;align-items:center;gap:6px;">' +
-              '<span class="deadline-indicator ' + cls + '"></span>' +
-              '<button class="icon-btn share-btn" data-type="payment" data-id="' + p.id + '" title="Поделиться">' +
-                '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>' +
-              '</button>' +
-            '</div>';
-          content.appendChild(div);
-          div.querySelector('.share-btn').onclick = function() {
-            shareItem(this.dataset.type, this.dataset.id);
-          };
-        });
-      } else {
-        var empty = document.createElement('div');
-        empty.className = 'empty-state';
-        empty.textContent = t('no_payments');
-        content.appendChild(empty);
-      }
-    } catch (err) {
-      console.error('Ошибка загрузки платежей:', err);
-      content.innerHTML = '<div class="error-msg">' + t('error') + '</div>';
-    }
-  }
-
-  // ============================================================
-  // 10. ШАРИНГ
-  // ============================================================
-  async function shareItem(type, id) {
-    try {
-      var link = window.location.origin + '?share=' + type + '&id=' + id;
-      await navigator.clipboard.writeText(link);
-      alert('✅ ' + t('share') + '!');
-    } catch (err) {
-      alert('❌ ' + t('error'));
-    }
-  }
-
-  // ============================================================
-  // 11. ЭКСПОРТ/ИМПОРТ
-  // ============================================================
-  function openExportModal() {
-    var modal = document.getElementById('export-modal');
-    document.getElementById('export-title').textContent = t('export_title');
-    document.getElementById('export-content').classList.remove('hidden');
-    document.getElementById('import-content').classList.add('hidden');
-    modal.style.display = 'flex';
-  }
-
-  function openImportModal() {
-    var modal = document.getElementById('export-modal');
-    document.getElementById('export-title').textContent = t('import_title');
-    document.getElementById('export-content').classList.add('hidden');
-    document.getElementById('import-content').classList.remove('hidden');
-    document.getElementById('import-file').value = '';
-    modal.style.display = 'flex';
-  }
-
-  function closeExportModal() {
-    document.getElementById('export-modal').style.display = 'none';
-  }
-
-  async function exportData(format) {
-    try {
-      if (!telegramId) { alert('Нет авторизации'); return; }
-      
-      var [tasksRes, paymentsRes] = await Promise.all([
-        supabaseClient.from('tasks').select('*').eq('telegram_id', telegramId),
-        supabaseClient.from('payments').select('*').eq('telegram_id', telegramId)
-      ]);
-
-      var data = {
-        tasks: tasksRes.data || [],
-        payments: paymentsRes.data || [],
-        exported_at: new Date().toISOString(),
-        version: '1.0'
-      };
-
-      if (format === 'json') {
-        var json = JSON.stringify(data, null, 2);
-        var blob = new Blob([json], { type: 'application/json' });
-        var url = URL.createObjectURL(blob);
-        var a = document.createElement('a');
-        a.href = url;
-        a.download = 'tracker_data_' + Date.now() + '.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } else if (format === 'excel') {
-        var wb = XLSX.utils.book_new();
-        if (data.tasks.length) {
-          var wsTasks = XLSX.utils.json_to_sheet(data.tasks);
-          XLSX.utils.book_append_sheet(wb, wsTasks, 'Tasks');
-        }
-        if (data.payments.length) {
-          var wsPayments = XLSX.utils.json_to_sheet(data.payments);
-          XLSX.utils.book_append_sheet(wb, wsPayments, 'Payments');
-        }
-        XLSX.writeFile(wb, 'tracker_data_' + Date.now() + '.xlsx');
-      }
-      
-      alert('✅ ' + t('export_success'));
-      closeExportModal();
-    } catch (err) {
-      console.error('Ошибка экспорта:', err);
-      alert('❌ ' + t('error'));
-    }
-  }
-
-  async function importData() {
-    if (!telegramId) { alert('Нет авторизации'); return; }
-    
-    var fileInput = document.getElementById('import-file');
-    var file = fileInput.files[0];
-    if (!file) {
-      alert(t('select_file'));
-      return;
-    }
-
-    try {
-      var text = await file.text();
-      var data;
-      
-      if (file.name.endsWith('.json')) {
-        data = JSON.parse(text);
-      } else {
-        var workbook = XLSX.read(text, { type: 'string' });
-        data = { tasks: [], payments: [] };
-        if (workbook.Sheets['Tasks']) {
-          data.tasks = XLSX.utils.sheet_to_json(workbook.Sheets['Tasks']);
-        }
-        if (workbook.Sheets['Payments']) {
-          data.payments = XLSX.utils.sheet_to_json(workbook.Sheets['Payments']);
-        }
-      }
-
-      if ((!data.tasks || !data.tasks.length) && (!data.payments || !data.payments.length)) {
-        alert(t('import_error'));
-        return;
-      }
-
-      if (data.tasks && data.tasks.length) {
-        var tasksToInsert = data.tasks.map(function(t) {
-          return {
-            telegram_id: telegramId,
-            title: t.title || t.name || 'Без названия',
-            folder_id: t.folder_id || null,
-            priority: t.priority || 'medium',
-            tags: t.tags || [],
-            deadline: t.deadline || null
-          };
-        });
-        await supabaseClient.from('tasks').insert(tasksToInsert);
-      }
-
-      if (data.payments && data.payments.length) {
-        var paymentsToInsert = data.payments.map(function(p) {
-          return {
-            telegram_id: telegramId,
-            title: p.title || p.name || 'Без названия',
-            due_date: p.due_date || p.dueDate || null,
-            recurrence: p.recurrence || '1m'
-          };
-        });
-        await supabaseClient.from('payments').insert(paymentsToInsert);
-      }
-
-      alert('✅ ' + t('import_success'));
-      closeExportModal();
-      if (currentSection === 'tasks') renderTasks();
-      else if (currentSection === 'payments') renderPayments();
-      
-    } catch (err) {
-      console.error('Ошибка импорта:', err);
-      alert('❌ ' + t('import_error'));
-    }
-  }
-
-  // ============================================================
-  // 12. НАСТРОЙКИ
-  // ============================================================
-  function openSettings() {
-    var content = document.getElementById('content');
-    content.innerHTML = 
-      '<div class="glass-card">' +
-        '<h3 style="margin-bottom:16px;">' + t('settings_title') + '</h3>' +
-        
-        '<div class="settings-row">' +
-          '<label>' + t('theme') + '</label>' +
-          '<button id="theme-toggle" class="secondary" style="padding:6px 16px;font-size:13px;">' +
-            (document.body.classList.contains('dark') ? '🌙 ' + t('dark') : '☀️ ' + t('light')) +
-          '</button>' +
-        '</div>' +
-        
-        '<div class="settings-row">' +
-          '<label>' + t('language') + '</label>' +
-          '<select id="lang-select" style="width:auto;padding:6px 12px;font-size:13px;">' +
-            '<option value="ru" ' + (currentLang === 'ru' ? 'selected' : '') + '>' + t('russian') + '</option>' +
-            '<option value="en" ' + (currentLang === 'en' ? 'selected' : '') + '>' + t('english') + '</option>' +
-          '</select>' +
-        '</div>' +
-        
-        '<hr style="margin:12px 0;opacity:0.1;">' +
-        
-        '<div style="display:flex;gap:10px;margin-top:8px;">' +
-          '<button id="settings-export-btn" style="flex:1;">' +
-            '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>' +
-            ' ' + t('export') +
-          '</button>' +
-          '<button id="settings-import-btn" style="flex:1;">' +
-            '<svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/><polyline points="16 16 12 12 8 16"/></svg>' +
-            ' ' + t('import') +
-          '</button>' +
-        '</div>' +
-        
-        '<div style="font-size:11px;opacity:0.4;margin-top:16px;">👤 ID: ' + (telegramId || 'не авторизован') + '</div>' +
-      '</div>';
-
-    document.getElementById('theme-toggle').onclick = toggleTheme;
-    document.getElementById('lang-select').onchange = function() { changeLanguage(this.value); };
-    document.getElementById('settings-export-btn').onclick = openExportModal;
-    document.getElementById('settings-import-btn').onclick = openImportModal;
-  }
-
-  // ============================================================
-  // 13. ТЕМА
-  // ============================================================
-  async function toggleTheme() {
-    var isDark = document.body.classList.toggle('dark');
-    if (telegramId) {
-      try {
-        await supabaseClient.from('profiles').update({ theme: isDark ? 'dark' : 'light' }).eq('telegram_id', telegramId);
-      } catch (err) {}
-    }
-    openSettings();
-  }
-
-  // ============================================================
-  // 14. ЯЗЫК
-  // ============================================================
-  async function changeLanguage(lang) {
-    currentLang = lang;
-    if (telegramId) {
-      try {
-        await supabaseClient.from('profiles').update({ language: lang }).eq('telegram_id', telegramId);
-      } catch (err) {}
-    }
-    updateUI();
-    if (currentSection === 'tasks') renderTasks();
-    else if (currentSection === 'payments') renderPayments();
-    else if (currentSection === 'settings') openSettings();
-  }
-
-  // ============================================================
-  // 15. ФОРМЫ
-  // ============================================================
-  function openForm(section) {
-    if (!telegramId) { alert('Нет авторизации'); return; }
-    currentSection = section;
-    document.getElementById('modal-title').textContent = section === 'tasks' ? t('new_task') : t('new_payment');
-    document.getElementById('modal-form').classList.toggle('hidden', section !== 'tasks');
-    document.getElementById('modal-form-payment').classList.toggle('hidden', section !== 'payments');
-    document.getElementById('modal').style.display = 'flex';
-    if (section === 'tasks') loadFolders();
-  }
-
-  function setupModal() {
-    document.getElementById('modal').onclick = function(e) {
-      if (e.target === this) this.style.display = 'none';
-    };
-    document.getElementById('export-modal').onclick = function(e) {
-      if (e.target === this) this.style.display = 'none';
-    };
-    
-    document.getElementById('export-json-btn').onclick = function() { exportData('json'); };
-    document.getElementById('export-excel-btn').onclick = function() { exportData('excel'); };
-    document.getElementById('import-btn-main').onclick = importData;
-    document.getElementById('import-cancel-btn').onclick = closeExportModal;
-    document.getElementById('export-close-btn').onclick = closeExportModal;
-  }
-
-  function setupForms() {
-    document.getElementById('modal-form').onsubmit = async function(e) {
-      e.preventDefault();
-      if (!telegramId) { alert('Нет авторизации'); return; }
-      
-      var title = document.getElementById('item-title').value;
-      var folder = document.getElementById('item-folder').value;
-      var priority = document.getElementById('item-priority').value;
-      var deadline = document.getElementById('item-deadline').value;
-      var tags = document.getElementById('item-tags').value.split(',').map(function(t) { return t.trim(); }).filter(Boolean);
-
-      setSyncStatus('loading');
-      var { error } = await supabaseClient.from('tasks').insert([{
-        telegram_id: telegramId, title: title,
-        folder_id: folder || null, priority: priority,
-        tags: tags, deadline: deadline || null
-      }]);
-      if (error) { 
-        alert('❌ ' + t('error')); 
-        setSyncStatus('error');
-        console.error(error);
-      } else {
-        document.getElementById('modal').style.display = 'none';
-        this.reset();
-        renderTasks();
-        setSyncStatus('ok');
-      }
-    };
-
-    document.getElementById('modal-form-payment').onsubmit = async function(e) {
-      e.preventDefault();
-      if (!telegramId) { alert('Нет авторизации'); return; }
-      
-      var title = document.getElementById('payment-title').value;
-      var dueDate = document.getElementById('payment-due-date').value;
-      var recurrence = document.getElementById('payment-recurrence').value;
-
-      setSyncStatus('loading');
-      var { error } = await supabaseClient.from('payments').insert([{
-        telegram_id: telegramId, title: title,
-        due_date: dueDate, recurrence: recurrence
-      }]);
-      if (error) { 
-        alert('❌ ' + t('error')); 
-        setSyncStatus('error');
-        console.error(error);
-      } else {
-        document.getElementById('modal').style.display = 'none';
-        this.reset();
-        renderPayments();
-        setSyncStatus('ok');
-      }
-    };
-  }
-
-  // ============================================================
-  // 16. НАВИГАЦИЯ
-  // ============================================================
-  function setupNavigation() {
-    document.querySelectorAll('.nav-btn').forEach(function(btn) {
-      btn.onclick = function() { navigateTo(this.dataset.section); };
-    });
-    document.getElementById('settings-btn').onclick = function() { navigateTo('settings'); };
-  }
-
-  function navigateTo(section) {
-    currentSection = section;
-    document.querySelectorAll('.nav-btn').forEach(function(b) { b.classList.remove('active'); });
-    var btn = document.querySelector('.nav-btn[data-section="' + section + '"]');
-    if (btn) btn.classList.add('active');
-    if (section === 'tasks') renderTasks();
-    else if (section === 'payments') renderPayments();
-    else if (section === 'settings') openSettings();
-  }
-
-  // ============================================================
-  // 17. ИНИЦИАЛИЗАЦИЯ
-  // ============================================================
-  function init() {
-    console.log('🚀 Инициализация...');
-    
-    // Получаем ID из Telegram
-    var tgId = getTelegramId();
-    
-    if (tgId) {
-      telegramId = tgId;
-      console.log('✅ ID получен:', telegramId);
-      
-      showNavigation(true);
-      updateUserUI();
-      loadProfile().then(function() {
-        updateUI();
-        setupNavigation();
-        setupModal();
-        setupForms();
-        renderTasks();
-        console.log('✅ Приложение готово!');
-      });
-    } else {
-      // Если не в Telegram - показываем ошибку
-      var content = document.getElementById('content');
-      content.innerHTML = `
-        <div class="glass-card" style="text-align:center;padding:40px;">
-          <div style="font-size:48px;margin-bottom:16px;">📱</div>
-          <h2>Откройте в Telegram</h2>
-          <p style="opacity:0.6;margin-top:8px;">Это приложение работает только внутри Telegram</p>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>📋 Задачник</h1>
+            <div class="header-stats">
+                <span class="done" id="statDone">✅ 0</span>
+                <span class="total" id="statTotal">📌 0</span>
+                <span id="statUrgent" style="color:var(--red)">🔴 0</span>
+                <span class="user-id" id="userIdDisplay">⏳</span>
+            </div>
         </div>
-      `;
-      console.log('❌ Не удалось получить Telegram ID');
-    }
-  }
+        <div class="sync-bar">
+            <span>☁️ Supabase</span>
+            <span class="status" id="syncStatus"><span class="saved">● сохранено</span></span>
+            <button class="btn-sm primary" id="btnExport">📥 JSON</button>
+            <button class="btn-sm" id="btnImport">📤 JSON</button>
+            <button class="btn-sm" id="btnReset">🔄 Сброс</button>
+        </div>
+        <input type="text" class="search-box" id="searchInput" placeholder="🔍 Поиск...">
+        <div class="filters" id="filters">
+            <button class="filter-btn active" data-filter="all">Все</button>
+            <button class="filter-btn" data-filter="active">Активные</button>
+            <button class="filter-btn" data-filter="done">Выполненные</button>
+            <button class="filter-btn urgent" data-filter="urgent">🔴 Срочные</button>
+        </div>
+        <div id="taskContainer"></div>
+        <div class="add-section"><button class="btn-add" id="btnAddTask">+ Добавить задачу</button></div>
+        <input type="file" id="fileInput" accept=".json" style="display:none;">
+    </div>
+    <div class="modal-overlay hidden" id="modalOverlay">
+        <div class="modal">
+            <h3 id="modalTitle">Новая задача</h3>
+            <label>Блок</label>
+            <select id="modalBlock">
+                <option value="0">Блок 0 — Срочное</option>
+                <option value="1">Блок 1 — Пароли и почта</option>
+                <option value="2">Блок 2 — Платежи и финансы</option>
+                <option value="3">Блок 3 — МойСклад и номенклатура</option>
+            </select>
+            <label>Задача</label><textarea id="modalText" placeholder="Текст задачи..."></textarea>
+            <label>Приоритет</label>
+            <select id="modalPriority">
+                <option value="high">🔴 Высокий</option>
+                <option value="mid" selected>🟡 Средний</option>
+                <option value="low">🟢 Низкий</option>
+            </select>
+            <label>Теги</label><input type="text" id="modalTags" placeholder="gmail, timeweb...">
+            <div class="modal-actions">
+                <button class="btn btn-cancel" id="btnModalCancel">Отмена</button>
+                <button class="btn btn-save" id="btnModalSave">Сохранить</button>
+            </div>
+        </div>
+    </div>
 
-  // ============================================================
-  // 18. ЗАПУСК
-  // ============================================================
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-</script>
+    <script>
+        (function() {
+            // ============================================================
+            // 1. КОНФИГУРАЦИЯ SUPABASE
+            // ============================================================
+            var SUPABASE_URL = 'https://lzwbdobhodwdmjzcmdjs.supabase.co';
+            var SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw';
+            var supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            
+            // ============================================================
+            // 2. TELEGRAM WEB APP
+            // ============================================================
+            var tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            
+            // Получаем ID пользователя (как в примере с CloudStorage)
+            var user = tg.initDataUnsafe?.user;
+            var userId = user ? String(user.id) : null;
+            
+            // Показываем ID пользователя
+            var userIdDisplay = document.getElementById('userIdDisplay');
+            if (userId) {
+                userIdDisplay.textContent = '👤 ' + userId;
+            } else {
+                userIdDisplay.textContent = '👤 тестовый';
+                userId = 'test_user_' + Date.now(); // Для тестирования без Telegram
+            }
+            
+            // ============================================================
+            // 3. ДАННЫЕ
+            // ============================================================
+            var TABLE_NAME = 'tasks';
+            var tasks = [];
+            var currentFilter = 'all';
+            var searchQuery = '';
+            var editingId = null;
+            
+            // Дефолтные задачи (как в примере)
+            var defaultTasks = [
+                {"id":"demo-1","block":"0","text":"Пример срочной задачи — проверить оплату хостинга до 20 числа","priority":"high","tags":["хостинг","срочно"],"done":false},
+                {"id":"demo-2","block":"1","text":"Пример задачи по почте — создать ящик info@company.ru","priority":"mid","tags":["почта","yandex"],"done":false},
+                {"id":"demo-3","block":"3","text":"Пример задачи по складу — обновить остатки после инвентаризации","priority":"low","tags":["склад"],"done":true}
+            ];
+
+            var blockDefs = {
+                '0':{title:'⚡ Блок 0 — Срочное',icon:'🔴'},
+                '1':{title:'🔐 Блок 1 — Пароли и почта',icon:'🔑'},
+                '2':{title:'💰 Блок 2 — Платежи и финансы',icon:'💳'},
+                '3':{title:'📦 Блок 3 — МойСклад и номенклатура',icon:'📊'}
+            };
+
+            // ============================================================
+            // 4. UI ЭЛЕМЕНТЫ
+            // ============================================================
+            var container = document.getElementById('taskContainer');
+            var modalOverlay = document.getElementById('modalOverlay');
+            var modalTitle = document.getElementById('modalTitle');
+            var modalBlock = document.getElementById('modalBlock');
+            var modalText = document.getElementById('modalText');
+            var modalPriority = document.getElementById('modalPriority');
+            var modalTags = document.getElementById('modalTags');
+            var syncStatus = document.getElementById('syncStatus');
+            var fileInput = document.getElementById('fileInput');
+            var searchInput = document.getElementById('searchInput');
+
+            // ============================================================
+            // 5. СТАТУС СИНХРОНИЗАЦИИ
+            // ============================================================
+            function setSyncStatus(text, cls) {
+                syncStatus.innerHTML = '<span class="' + cls + '">' + text + '</span>';
+            }
+
+            // ============================================================
+            // 6. ЗАГРУЗКА ЗАДАЧ ИЗ SUPABASE (аналог CloudStorage.getItem)
+            // ============================================================
+            async function loadTasks() {
+                setSyncStatus('⏳ загрузка...', 'pending');
+                
+                try {
+                    var { data, error } = await supabase
+                        .from(TABLE_NAME)
+                        .select('*')
+                        .eq('telegram_id', userId);
+                    
+                    if (error) throw error;
+                    
+                    if (!data || data.length === 0) {
+                        // Нет задач — создаём дефолтные
+                        tasks = JSON.parse(JSON.stringify(defaultTasks));
+                        await saveTasks();
+                    } else {
+                        tasks = data.map(function(t) {
+                            return {
+                                id: t.id,
+                                block: t.block,
+                                text: t.text,
+                                priority: t.priority || 'mid',
+                                tags: t.tags || [],
+                                done: t.done || false
+                            };
+                        });
+                    }
+                    
+                    render();
+                    setSyncStatus('● сохранено', 'saved');
+                    
+                } catch (err) {
+                    console.error('Ошибка загрузки:', err);
+                    tasks = JSON.parse(JSON.stringify(defaultTasks));
+                    render();
+                    setSyncStatus('⚠ ошибка', 'pending');
+                }
+            }
+
+            // ============================================================
+            // 7. СОХРАНЕНИЕ ЗАДАЧ В SUPABASE (аналог CloudStorage.setItem)
+            // ============================================================
+            async function saveTasks() {
+                setSyncStatus('⏳ синхронизация...', 'pending');
+                
+                try {
+                    // Удаляем старые задачи пользователя
+                    await supabase
+                        .from(TABLE_NAME)
+                        .delete()
+                        .eq('telegram_id', userId);
+                    
+                    // Вставляем новые
+                    if (tasks.length > 0) {
+                        var tasksToInsert = tasks.map(function(t) {
+                            return {
+                                id: t.id,
+                                telegram_id: userId,
+                                block: t.block,
+                                text: t.text,
+                                priority: t.priority || 'mid',
+                                tags: t.tags || [],
+                                done: t.done || false
+                            };
+                        });
+                        
+                        var { error } = await supabase
+                            .from(TABLE_NAME)
+                            .insert(tasksToInsert);
+                        
+                        if (error) throw error;
+                    }
+                    
+                    setSyncStatus('● сохранено', 'saved');
+                    
+                } catch (err) {
+                    console.error('Ошибка сохранения:', err);
+                    setSyncStatus('⚠ ошибка', 'pending');
+                }
+            }
+
+            // ============================================================
+            // 8. ОСТАЛЬНЫЕ ФУНКЦИИ (те же что в примере)
+            // ============================================================
+            function resetToDefaults() {
+                if (confirm('Сбросить все задачи к демо-списку?')) {
+                    tasks = JSON.parse(JSON.stringify(defaultTasks));
+                    saveTasks().then(render);
+                }
+            }
+
+            function exportToJSON() {
+                var blob = new Blob([JSON.stringify(tasks, null, 2)], {type:'application/json'});
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'tasks.json';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
+
+            function importFromJSON(file) {
+                var reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        var data = JSON.parse(e.target.result);
+                        if (!Array.isArray(data)) throw new Error('Файл должен содержать массив задач');
+                        tasks = data;
+                        saveTasks().then(render);
+                        setSyncStatus('● импортировано', 'saved');
+                    } catch(err) {
+                        alert('Ошибка: ' + err.message);
+                    }
+                };
+                reader.readAsText(file);
+            }
+
+            function triggerImport() { fileInput.click(); }
+
+            function generateId() {
+                return 't-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+            }
+
+            function escapeHtml(s) {
+                var d = document.createElement('div');
+                d.textContent = s;
+                return d.innerHTML;
+            }
+
+            // ============================================================
+            // 9. ФИЛЬТРАЦИЯ И ОТРИСОВКА
+            // ============================================================
+            function getFilteredTasks() {
+                var f = tasks.slice();
+                if (searchQuery.trim()) {
+                    var q = searchQuery.toLowerCase().trim();
+                    f = f.filter(function(t) {
+                        return t.text.toLowerCase().includes(q) ||
+                            (t.tags || []).some(function(tg) { return tg.toLowerCase().includes(q); });
+                    });
+                }
+                if (currentFilter === 'active') f = f.filter(function(t) { return !t.done; });
+                else if (currentFilter === 'done') f = f.filter(function(t) { return t.done; });
+                else if (currentFilter === 'urgent') f = f.filter(function(t) { return t.priority === 'high' && !t.done; });
+                return f;
+            }
+
+            function render() {
+                var filtered = getFilteredTasks();
+                var html = '';
+                var blockIds = ['0', '1', '2', '3'];
+                
+                for (var i = 0; i < blockIds.length; i++) {
+                    var bid = blockIds[i];
+                    var bt = filtered.filter(function(t) { return t.block === bid; });
+                    if (bt.length === 0 && currentFilter !== 'all') continue;
+                    
+                    var def = blockDefs[bid];
+                    var doneC = bt.filter(function(t) { return t.done; }).length;
+                    
+                    html += '<div class="block open" data-block="' + bid + '">';
+                    html += '<div class="block-header">';
+                    html += '<span class="block-icon">' + def.icon + '</span>';
+                    html += '<span class="block-title">' + def.title + ' <span class="block-counter">' + doneC + '/' + bt.length + '</span></span>';
+                    html += '<span class="block-arrow">▶</span>';
+                    html += '</div>';
+                    html += '<div class="block-body"><ul class="task-list">';
+                    
+                    for (var j = 0; j < bt.length; j++) {
+                        html += renderTask(bt[j]);
+                    }
+                    
+                    html += '</ul></div></div>';
+                }
+                
+                container.innerHTML = html || '<div style="text-align:center;padding:40px;color:var(--text2)">Нет задач</div>';
+                
+                document.getElementById('statDone').textContent = '✅ ' + tasks.filter(function(t) { return t.done; }).length;
+                document.getElementById('statTotal').textContent = '📌 ' + tasks.length;
+                document.getElementById('statUrgent').textContent = '🔴 ' + tasks.filter(function(t) { return t.priority === 'high' && !t.done; }).length;
+                
+                bindEvents();
+            }
+
+            function renderTask(t) {
+                var pl = {high:'🔴 Высокий', mid:'🟡 Средний', low:'🟢 Низкий'}[t.priority] || '';
+                var tagsHtml = (t.tags || []).map(function(tag) {
+                    var cls = '';
+                    if (['gmail', 'google'].indexOf(tag.toLowerCase()) !== -1) cls = 'gmail';
+                    else if (['timeweb'].indexOf(tag.toLowerCase()) !== -1) cls = 'timeweb';
+                    else if (['yandex', 'яндекс'].indexOf(tag.toLowerCase()) !== -1) cls = 'yandex';
+                    return '<span class="tag ' + cls + '">' + tag + '</span>';
+                }).join('');
+                
+                return '<li class="task-item ' + (t.done ? 'completed' : '') + '" data-id="' + t.id + '">' +
+                    '<div class="priority-dot priority-' + t.priority + '"></div>' +
+                    '<div class="task-check" data-action="toggle" data-id="' + t.id + '">✓</div>' +
+                    '<div class="task-content">' +
+                        '<div class="task-text">' + escapeHtml(t.text) + '</div>' +
+                        '<div class="task-meta">' + tagsHtml + ' ' + pl + '</div>' +
+                    '</div>' +
+                    '<div class="task-actions">' +
+                        '<button class="btn-icon" data-action="edit" data-id="' + t.id + '">✎</button>' +
+                        '<button class="btn-icon del" data-action="delete" data-id="' + t.id + '">✕</button>' +
+                    '</div>' +
+                '</li>';
+            }
+
+            // ============================================================
+            // 10. ОБРАБОТЧИКИ СОБЫТИЙ
+            // ============================================================
+            function bindEvents() {
+                document.querySelectorAll('.block-header').forEach(function(h) {
+                    h.addEventListener('click', function() {
+                        this.closest('.block').classList.toggle('open');
+                    });
+                });
+                
+                document.querySelectorAll('[data-action]').forEach(function(el) {
+                    el.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        var a = this.dataset.action;
+                        var id = this.dataset.id;
+                        if (a === 'toggle') toggleTask(id);
+                        if (a === 'edit') openEditModal(id);
+                        if (a === 'delete') deleteTask(id);
+                    });
+                });
+            }
+
+            function toggleTask(id) {
+                for (var i = 0; i < tasks.length; i++) {
+                    if (tasks[i].id === id) {
+                        tasks[i].done = !tasks[i].done;
+                        break;
+                    }
+                }
+                saveTasks().then(render);
+            }
+
+            function deleteTask(id) {
+                if (confirm('Удалить задачу?')) {
+                    tasks = tasks.filter(function(t) { return t.id !== id; });
+                    saveTasks().then(render);
+                }
+            }
+
+            function openAddModal() {
+                editingId = null;
+                modalTitle.textContent = 'Новая задача';
+                modalBlock.value = '0';
+                modalText.value = '';
+                modalPriority.value = 'mid';
+                modalTags.value = '';
+                modalOverlay.classList.remove('hidden');
+                modalText.focus();
+            }
+
+            function openEditModal(id) {
+                var t = null;
+                for (var i = 0; i < tasks.length; i++) {
+                    if (tasks[i].id === id) { t = tasks[i]; break; }
+                }
+                if (!t) return;
+                editingId = id;
+                modalTitle.textContent = 'Редактировать';
+                modalBlock.value = t.block;
+                modalText.value = t.text;
+                modalPriority.value = t.priority;
+                modalTags.value = (t.tags || []).join(', ');
+                modalOverlay.classList.remove('hidden');
+                modalText.focus();
+            }
+
+            function closeModal() {
+                modalOverlay.classList.add('hidden');
+                editingId = null;
+            }
+
+            function saveModal() {
+                var text = modalText.value.trim();
+                if (!text) return;
+                
+                var data = {
+                    block: modalBlock.value,
+                    text: text,
+                    priority: modalPriority.value,
+                    tags: modalTags.value.split(',').map(function(s) { return s.trim(); }).filter(Boolean)
+                };
+                
+                if (editingId) {
+                    for (var i = 0; i < tasks.length; i++) {
+                        if (tasks[i].id === editingId) {
+                            tasks[i].block = data.block;
+                            tasks[i].text = data.text;
+                            tasks[i].priority = data.priority;
+                            tasks[i].tags = data.tags;
+                            break;
+                        }
+                    }
+                } else {
+                    tasks.unshift({
+                        id: generateId(),
+                        done: false,
+                        block: data.block,
+                        text: data.text,
+                        priority: data.priority,
+                        tags: data.tags
+                    });
+                }
+                
+                saveTasks().then(render);
+                closeModal();
+            }
+
+            // ============================================================
+            // 11. ПОДКЛЮЧЕНИЕ СОБЫТИЙ
+            // ============================================================
+            document.getElementById('filters').addEventListener('click', function(e) {
+                if (e.target.classList.contains('filter-btn')) {
+                    document.querySelectorAll('.filter-btn').forEach(function(b) {
+                        b.classList.remove('active');
+                    });
+                    e.target.classList.add('active');
+                    currentFilter = e.target.dataset.filter;
+                    render();
+                }
+            });
+
+            searchInput.addEventListener('input', function() {
+                searchQuery = this.value;
+                render();
+            });
+
+            document.getElementById('btnAddTask').addEventListener('click', openAddModal);
+            document.getElementById('btnModalCancel').addEventListener('click', closeModal);
+            document.getElementById('btnModalSave').addEventListener('click', saveModal);
+            document.getElementById('btnExport').addEventListener('click', exportToJSON);
+            document.getElementById('btnImport').addEventListener('click', triggerImport);
+            document.getElementById('btnReset').addEventListener('click', resetToDefaults);
+
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    importFromJSON(this.files[0]);
+                    this.value = '';
+                }
+            });
+
+            modalOverlay.addEventListener('click', function(e) {
+                if (e.target === modalOverlay) closeModal();
+            });
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && !modalOverlay.classList.contains('hidden')) closeModal();
+            });
+
+            // ============================================================
+            // 12. ЗАПУСК
+            // ============================================================
+            loadTasks();
+        })();
+    </script>
 </body>
 </html>
