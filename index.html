@@ -247,7 +247,9 @@
 <script type="module">
   // --- ЗАМЕНИТЕ НА ВАШИ ДАННЫЕ ---
   const SUPABASE_URL = 'https://lzwbdobhodwdmjzcmdjs.supabase.co'; // Замените на ваш URL
-  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw'; // Замените на ваш anon key
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx6d2Jkb2Job2R3ZG1qemNtZGpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQyNTExNDksImV4cCI6MjA5OTgyNzE0OX0.tpAB7yZZH3S7MH6_EvNGWe5erJDNdZLnG0CgYDmmzRw'; 
+  // --- ЛОКАЛЬНОЕ ТЕСТИРОВАНИЕ: Укажите ваш Telegram ID как BigInt ---
+  const TEST_TELEGRAM_ID = BigInt("809839462"); // ЗАМЕНИТЕ НА СВОЙ РЕАЛЬНЫЙ ID
   // -----------------------------
 
   if (!SUPABASE_URL || !SUPABASE_KEY || SUPABASE_URL.includes('your-project')) {
@@ -510,7 +512,7 @@
           <span>${task.title}</span>
           <div>
             <span class="deadline-indicator ${statusClass}"></span>
-            <button onclick="shareItem('task', '${task.id}')">${t('share')}</button>
+            <button onclick="window.shareItem('task', '${task.id}')">${t('share')}</button>
           </div>
         `;
         content.appendChild(taskDiv);
@@ -565,7 +567,7 @@
           <span>${payment.title}</span>
           <div>
             <span class="deadline-indicator ${statusClass}"></span>
-            <button onclick="shareItem('payment', '${payment.id}')">${t('share')}</button>
+            <button onclick="window.shareItem('payment', '${payment.id}')">${t('share')}</button>
           </div>
         `;
         content.appendChild(paymentDiv);
@@ -626,15 +628,15 @@
     content.innerHTML = `
       <div class="glass-card">
         <h3>${t('settings')}</h3>
-        <p><label>${t('theme')}:</label> <button onclick="toggleTheme()">Toggle</button></p>
+        <p><label>${t('theme')}:</label> <button onclick="window.toggleTheme()">Toggle</button></p>
         <p><label>${t('language')}:</label>
-          <select onchange="changeLanguage(this.value)">
+          <select onchange="window.changeLanguage(this.value)">
             <option value="ru" ${currentLang === 'ru' ? 'selected' : ''}>RU</option>
             <option value="en" ${currentLang === 'en' ? 'selected' : ''}>EN</option>
           </select>
         </p>
-        <p><button onclick="exportData()">${t('export')}</button></p>
-        <p><button onclick="importData()">${t('import')}</button></p>
+        <p><button onclick="window.exportData()">${t('export')}</button></p>
+        <p><button onclick="window.importData()">${t('import')}</button></p>
       </div>
     `;
   }
