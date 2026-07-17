@@ -508,7 +508,7 @@
         <div class="bot-login-hint">
           ${t('open_in_telegram')}
           <br>
-          ${t('bot_login')} <a href="#" id="bot-link">@ваш_бот</a>
+          ${t('bot_login')} <a href="#" id="bot-link">@pay_task0_bot</a>
         </div>
         <div style="font-size:11px;opacity:0.4;margin-top:8px;">
           🔒 Данные синхронизируются через Telegram
@@ -523,7 +523,7 @@
         Telegram.WebApp.openLink('https://t.me/' + (Telegram.WebApp.initDataUnsafe?.user?.username || ''));
       } else {
         // Если не в Telegram - открываем бота
-        var botUsername = '@ваш_бот'; // Замените на имя вашего бота
+        var botUsername = '@pay_task0_bot'; // Замените на имя вашего бота
         window.open('https://t.me/' + botUsername.replace('@', ''), '_blank');
       }
     };
@@ -531,7 +531,7 @@
     // Ссылка на бота
     document.getElementById('bot-link').onclick = function(e) {
       e.preventDefault();
-      window.open('https://t.me/ваш_бот', '_blank');
+      window.open('https://t.me/pay_task0_bot', '_blank');
     };
   }
 
