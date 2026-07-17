@@ -5,10 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Task & Payment Tracker</title>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
-  <!-- Подключаем Telegram SDK -->
+  
+  <!-- Сначала загружаем SDK по порядку -->
   <script src="https://unpkg.com/@twa-dev/sdk"></script>
-  <script src="https://unpkg.com/supabase@latest/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+  
   <style>
     :root {
       --bg-primary: #f0f4f8;
@@ -296,7 +298,7 @@
   // ----------------------
 
   // Создаем клиент Supabase
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  const supabase = supabaseJs.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   let telegramId = null;
   let currentSection = 'tasks';
