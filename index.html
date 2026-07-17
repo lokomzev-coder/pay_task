@@ -142,7 +142,6 @@
     .settings-row label { font-size: 14px; font-weight: 600; }
     .settings-row select, .settings-row button { width: auto; margin: 0; }
 
-    /* Браузерный режим - просто показываем уведомление */
     .browser-notice { 
       text-align: center; 
       padding: 40px 20px; 
@@ -165,6 +164,8 @@
     }
     .browser-notice .telegram-link:hover { background: #006699; }
     .browser-notice .telegram-link .icon { stroke: white; width: 22px; height: 22px; }
+
+    .debug-info { font-size: 11px; opacity: 0.3; padding: 8px; background: var(--glass-bg); border-radius: 8px; margin-top: 12px; word-break: break-all; }
   </style>
 </head>
 <body class="light">
@@ -300,6 +301,7 @@
   var currentLang = 'ru';
   var userData = null;
   var isInTelegram = false;
+  var authChecked = false;
 
   // ============================================================
   // 2. ПЕРЕВОДЫ
@@ -390,15 +392,107 @@
   }
 
   // ============================================================
-  // 4. ПОЛУЧЕНИЕ TELEGRAM ID
+  // 4. ПОЛУЧЕНИЕ TELEGRAM ID (ИСПРАВЛЕННАЯ ВЕРСИЯ)
   // ============================================================
   function getTelegramId() {
     try {
-      if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-        Telegram.WebApp.ready();
+      console.log('🔍 Проверка Telegram WebApp...');
+      
+      // Проверяем наличие Telegram WebApp
+      if (typeof window.Telegram === 'undefined') {
+        console.log('❌ Telegram не найден');
+        isInTelegram = false;
+        return false;
+      }
+      
+      if (!window.Telegram.WebApp) {
+        console.log('❌ Telegram.WebApp не найден');
+        isInTelegram = false;
+        return false;
+      }
+      
+      // Инициализируем WebApp
+      window.Telegram.WebApp.ready();
+      console.log('✅ Telegram.WebApp.ready() вызван');
+      
+      // Получаем данные
+      var initData = window.Telegram.WebApp.initData;
+      var initDataUnsafe = window.Telegram.WebApp.initDataUnsafe;
+      
+      console.log('📦 initData:', initData ? 'есть' : 'нет');
+      console.log('📦 initDataUnsafe:', initDataUnsafe ? 'есть' : 'нет');
+      
+      // Пытаемся получить пользователя
+      var user = null;
+      
+      // Способ 1: из initDataUnsafe
+      if (initDataUnsafe && initDataUnsafe.user) {
+        user = initDataUnsafe.user;
+        console.log('👤 Пользователь из initDataUnsafe:', user);
+      }
+      
+      // Способ 2: парсим initData (если user не найден)
+      if (!user && initData) {
+        try {
+          var params = new URLSearchParams(initData);
+          var userStr = params.get('user');
+          if (userStr) {
+            user = JSON.parse(decodeURIComponent(userStr));
+            console.log('👤 Пользователь из initData:', user);
+          }
+        } catch (e) {
+          console.log('❌ Ошибка парсинга initData:', e);
+        }
+      }
+      
+      // Если пользователь найден
+      if (user && user.id) {
         isInTelegram = true;
-        var user = Telegram.WebApp.initDataUnsafe?.user;
-        if (user) {
+        telegramId = String(user.id);
+        userData = {
+          id: String(user.id),
+          username: user.username || user.first_name || 'Пользователь',
+          firstName: user.first_name || '',
+          lastName: user.last_name || '',
+          photoUrl: user.photo_url || null
+        };
+        console.log('✅ Telegram ID получен:', telegramId, 'Пользователь:', userData.username);
+        return true;
+      }
+      
+      // Проверяем, есть ли хост в Telegram (определяем по User-Agent)
+      var isTelegramWebView = navigator.userAgent.includes('Telegram') || 
+                              navigator.userAgent.includes('TelegramBot') ||
+                              window.location.href.includes('tgWebApp');
+      
+      if (isTelegramWebView) {
+        console.log('⚠️ Похоже на Telegram, но пользователь не найден. Пробуем ещё раз...');
+        // Пробуем получить через setTimeout (может данные ещё не загрузились)
+        setTimeout(function() {
+          retryGetTelegramId();
+        }, 500);
+        return false;
+      }
+      
+      console.log('🌐 Не в Telegram (браузер)');
+      isInTelegram = false;
+      return false;
+      
+    } catch (e) {
+      console.error('❌ Ошибка получения Telegram ID:', e);
+      isInTelegram = false;
+      return false;
+    }
+  }
+
+  // Повторная попытка получения ID
+  function retryGetTelegramId() {
+    console.log('🔄 Повторная попытка получения Telegram ID...');
+    try {
+      if (window.Telegram && window.Telegram.WebApp) {
+        var initDataUnsafe = window.Telegram.WebApp.initDataUnsafe;
+        if (initDataUnsafe && initDataUnsafe.user) {
+          var user = initDataUnsafe.user;
           telegramId = String(user.id);
           userData = {
             id: String(user.id),
@@ -407,18 +501,19 @@
             lastName: user.last_name || '',
             photoUrl: user.photo_url || null
           };
-          console.log('✅ Telegram ID получен:', telegramId, 'Пользователь:', userData.username);
-          return true;
+          isInTelegram = true;
+          console.log('✅ Telegram ID получен (повторно):', telegramId);
+          
+          // Загружаем данные
+          loadApp();
+          return;
         }
       }
-      // Не в Telegram
-      isInTelegram = false;
-      console.log('🌐 Не в Telegram');
-      return false;
+      console.log('❌ Повторная попытка не удалась');
+      renderBrowserMode();
     } catch (e) {
-      console.error('❌ Ошибка получения ID:', e);
-      isInTelegram = false;
-      return false;
+      console.error('❌ Ошибка повторной попытки:', e);
+      renderBrowserMode();
     }
   }
 
@@ -472,7 +567,7 @@
   }
 
   // ============================================================
-  // 6. БРАУЗЕРНЫЙ РЕЖИМ - ПРОСТОЕ УВЕДОМЛЕНИЕ
+  // 6. БРАУЗЕРНЫЙ РЕЖИМ
   // ============================================================
   function renderBrowserMode() {
     showNavigation(false);
@@ -495,8 +590,15 @@
         <div style="margin-top:20px;font-size:12px;opacity:0.3;">
           🔒 Данные синхронизируются через Telegram ID
         </div>
+        <div class="debug-info" id="debug-info"></div>
       </div>
     `;
+    
+    // Показываем отладочную информацию
+    var debugEl = document.getElementById('debug-info');
+    if (debugEl) {
+      debugEl.textContent = 'User-Agent: ' + navigator.userAgent;
+    }
   }
 
   // ============================================================
@@ -1048,36 +1150,62 @@
   }
 
   // ============================================================
-  // 18. ИНИЦИАЛИЗАЦИЯ
+  // 18. ЗАГРУЗКА ПРИЛОЖЕНИЯ
+  // ============================================================
+  function loadApp() {
+    if (!telegramId) {
+      renderBrowserMode();
+      return;
+    }
+    
+    console.log('👤 Загрузка приложения для ID:', telegramId);
+    showNavigation(true);
+    updateUserUI();
+    loadProfile().then(function() {
+      updateUI();
+      setupNavigation();
+      setupModal();
+      setupForms();
+      renderTasks();
+      console.log('✅ Приложение готово!');
+    });
+  }
+
+  // ============================================================
+  // 19. ИНИЦИАЛИЗАЦИЯ
   // ============================================================
   function init() {
     console.log('🚀 Инициализация...');
+    console.log('📍 URL:', window.location.href);
+    console.log('📍 User-Agent:', navigator.userAgent);
     
     // Пробуем получить Telegram ID
     var hasId = getTelegramId();
     
     if (hasId && telegramId) {
-      // ✅ В Telegram - сразу показываем задачи
-      console.log('👤 Telegram ID:', telegramId);
-      showNavigation(true);
-      updateUserUI();
-      loadProfile().then(function() {
-        updateUI();
-        setupNavigation();
-        setupModal();
-        setupForms();
-        renderTasks();
-        console.log('✅ Приложение готово!');
-      });
+      loadApp();
     } else {
-      // ❌ В браузере - показываем уведомление
-      console.log('🌐 Браузерный режим');
-      renderBrowserMode();
+      // Проверяем, может быть это Telegram но ID ещё не загрузился
+      var isTelegramWebView = navigator.userAgent.includes('Telegram') || 
+                              navigator.userAgent.includes('TelegramBot') ||
+                              window.location.href.includes('tgWebApp');
+      
+      if (isTelegramWebView) {
+        console.log('⏳ Похоже на Telegram, ждём загрузку данных...');
+        // Даём время на загрузку
+        setTimeout(function() {
+          if (!telegramId) {
+            retryGetTelegramId();
+          }
+        }, 1000);
+      } else {
+        renderBrowserMode();
+      }
     }
   }
 
   // ============================================================
-  // 19. ЗАПУСК
+  // 20. ЗАПУСК
   // ============================================================
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
